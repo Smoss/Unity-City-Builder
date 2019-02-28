@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum DrawMode { Terain, Fertility };
+
 public class MapGenerator : MonoBehaviour
 {
 
-    public enum DrawMode { Terain, Fertility};
     public DrawMode drawMode;
     public int width;
     public int height;
