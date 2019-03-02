@@ -24,7 +24,7 @@ public class CitySquare
                 return this.Height;
         }
     }
-    public CitySquare(int _height, int _fertility)
+    public CitySquare(float _height, float _fertility)
     {
         height = _height;
         fertility = _fertility;

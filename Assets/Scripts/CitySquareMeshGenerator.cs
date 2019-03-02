@@ -15,24 +15,23 @@ public class CitySquareMeshGenerator : MonoBehaviour
         Direction.S,
         Direction.SW,
         Direction.W,
-        Direction.NW
+        Direction.NW,
     };
-    Vector3[] vertices;
+    public Vector3[] vertices;
     CitySquare data;
     Dictionary<Direction, CitySquare> neighbors;
     float scale;
     float vScale;
     DrawMode drawMode;
-    void CreateData(
+    Texture2D tex;
+    public void CreateData(
         CitySquare[] _neighbors, 
         float _scale, 
-        Vector2 gridPos, 
         float _vScale,
         DrawMode _drawMode
     )
     {
         drawMode = _drawMode;
-        this.transform.SetPositionAndRotation(new Vector3(gridPos.x, 0, gridPos.y), Quaternion.identity);
         data = _neighbors[(int)Direction.C];
         vScale = _vScale;
         vertices = new Vector3[9];
@@ -51,9 +50,9 @@ public class CitySquareMeshGenerator : MonoBehaviour
         for (int x = 0; x < 9; x++)
         {
             vertices[x] = new Vector3(
-                (x % 3 - 1) * unit,
-                neighbors[(Direction)x].Height + data.Height / 2f * scale * vScale,
-                (x / 3 - 1) * unit * -1
+                (x / 3 - 1) * unit,
+                (neighbors[(Direction)x].Height + data.Height) / 2f * scale * vScale,
+                (x % 3 - 1) * unit
             );
         }
         List<Vector3> mVertices = new List<Vector3>(24);
@@ -65,14 +64,14 @@ public class CitySquareMeshGenerator : MonoBehaviour
         {
             int firstP = (int)clockwise[x];
             int secondP = (int)clockwise[(x + 1) % 8];
+            triangles.Add(mVertices.Count);
             mVertices.Add(vertices[firstP]);
-            triangles.Add(firstP);
-            colors.Add(new Color32(0, 0, 0, (byte)((alphaValue + neighbors[(Direction)firstP].getRequestedValue(drawMode)) * 128f)));
+            colors.Add(new Color32(0, 0, 0, alpha));
+            triangles.Add(mVertices.Count);
             mVertices.Add(vertices[secondP]);
-            triangles.Add(secondP);
-            colors.Add(new Color32(0, 0, 0, (byte)((alphaValue + neighbors[(Direction)secondP].getRequestedValue(drawMode)) * 128f)));
+            colors.Add(new Color32(0, 0, 0, alpha));
+            triangles.Add(mVertices.Count);
             mVertices.Add(vertices[(int)Direction.C]);
-            triangles.Add((int)Direction.C);
             colors.Add(new Color32(0, 0, 0, alpha));
         }
         Mesh mesh = new Mesh();
@@ -92,6 +91,10 @@ public class CitySquareMeshGenerator : MonoBehaviour
 
     // Update is called once per frame
     void Update()
+    {
+        
+    }
+    private void OnDestroy()
     {
         
     }
