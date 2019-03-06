@@ -10,6 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8408538914455562716}
   - component: {fileID: 8408538914455562717}
+  - component: {fileID: 2980882288353000518}
+  - component: {fileID: 1854073754563967929}
+  - component: {fileID: 4517141494205511613}
   m_Layer: 0
   m_Name: MapGeneratorMk2
   m_TagString: Untagged
@@ -62,3 +65,61 @@ MonoBehaviour:
   CitySquareBase: {fileID: 2106931046807248864, guid: e9f4eae866bce9d4db3d2c1d6b3e2bda,
     type: 3}
   scale: 1
+  verticalScale: 0
+--- !u!114 &2980882288353000518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8408538914455562715}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6170cf5b6418ac45acb6bfe8c397653, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!33 &1854073754563967929
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8408538914455562715}
+  m_Mesh: {fileID: 0}
+--- !u!23 &4517141494205511613
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8408538914455562715}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 28e793ebd1dd35e40b87befa06708ac3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0

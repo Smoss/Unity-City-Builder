@@ -35,8 +35,7 @@ public class MapGenerator : MonoBehaviour
     Color32[] colorSet;
 
     float[,,] map;
-    private CitySquare[,] CitySquares;
-    private GameObject[,] CitySquareMeshes;
+    private CityPoint[,] cityPoints;
     public GameObject CitySquareBase;
     public float scale;
     public float verticalScale;
@@ -82,21 +81,10 @@ public class MapGenerator : MonoBehaviour
     }
 
     public void GenerateMap() {
-        if (CitySquareMeshes != null)
-        {
-            for (int x = 0; x < CitySquareMeshes.GetLength(0); x++)
-            {
-                for (int y = 0; y < CitySquareMeshes.GetLength(1); y++)
-                {
-                    GameObject.DestroyImmediate(CitySquareMeshes[x, y]);
-                }
-            }
-        }
-        aWidth = width + 2;
-        aHeight = height + 2;
+        aWidth = width + 1;
+        aHeight = height + 1;
         map = new float[2, aWidth, aHeight];
-        CitySquares = new CitySquare[aWidth, aHeight];
-        CitySquareMeshes = new GameObject[width, height];
+        cityPoints = new CityPoint[aWidth, aHeight];
         halfHeight = aHeight / 2f;
         halfWidth = aWidth / 2f;
         colorSet = new Color32[2];
@@ -126,32 +114,14 @@ public class MapGenerator : MonoBehaviour
         {
             for (int y = 0; y < aHeight; y++)
             {
-                CitySquares[x, y] = new CitySquare(map[0, x, y], map[1, x, y]);
+                cityPoints[x, y] = new CityPoint(map[0, x, y], map[1, x, y]);
             }
         }
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                CitySquareMeshes[x, y] = Instantiate(CitySquareBase, transform.position + (new Vector3((x - halfHeight + 1.5f) * scale, 0, (y - halfWidth + 1.5f) * scale)), Quaternion.identity);
-                List<CitySquare> neighbors = new List<CitySquare>();
-                for(int u = 0; u < 3; u++)
-                {
-                    for(int v = 0; v < 3; v++)
-                    {
-                        neighbors.Add(CitySquares[u + x, v + y]);
-                    }
-                }
-                GameObject gO = CitySquareMeshes[x, y];
-                CitySquareMeshGenerator meshG = gO.GetComponent<CitySquareMeshGenerator>();
-                CitySquareMeshes[x, y].GetComponent<CitySquareMeshGenerator>().CreateData(neighbors.ToArray(), scale, verticalScale, drawMode);
-            }
-        }
-        //MeshGenerator meshGen = GetComponent<MeshGenerator>();
-        //Mesh mesh = meshGen.GenerateMesh(map, 1, colorSet[1], colorSet[0], maxValue, minValue, (int)drawMode);
-        //GetComponent<MeshFilter>().mesh = mesh;
-        //Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode);
-        //GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
+        MeshGenerator meshGen = GetComponent<MeshGenerator>();
+        Mesh mesh = meshGen.GenerateMesh(cityPoints, scale, verticalScale, colorSet[0], colorSet[1], width, height, drawMode);
+        GetComponent<MeshFilter>().mesh = mesh;
+        Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode);
+        GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
     }
 
     float[] SmoothMap(int mapIndex) {

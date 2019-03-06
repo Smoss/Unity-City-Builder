@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CitySquare
+public class CityPoint
 {
     float height;
     float fertility;
@@ -24,7 +24,7 @@ public class CitySquare
                 return this.Height;
         }
     }
-    public CitySquare(float _height, float _fertility)
+    public CityPoint(float _height, float _fertility)
     {
         height = _height;
         fertility = _fertility;
