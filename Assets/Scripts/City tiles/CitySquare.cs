@@ -14,10 +14,10 @@ public class CitySquare
         Direction.NW,
     };
     static Vector3[] clockwiseVs = new Vector3[] {
-        new Vector3(-1, 0, 1),
-        new Vector3(1, 0, 1),
-        new Vector3(-1, 0, -1),
-        new Vector3(1, 0, -1),
+        new Vector3(-.5f, 0, .5f),
+        new Vector3(.5f, 0, .5f),
+        new Vector3(-.5f, 0, -.5f),
+        new Vector3(.5f, 0, -.5f),
     };
     public Vector3[] vertices;
     Dictionary<Direction, CityPoint> corners;
@@ -62,15 +62,14 @@ public class CitySquare
         }
         height /= 4;
         fertility /= 4;
-        this.CreateMesh();
-        float unit = scale / 2;
         for (int x = 0; x < 4; x++)
         {
+            Vector3 newOffset = clockwiseVs[x] + offset;
             vertices[x] = new Vector3(
                 0,
                 (corners[(Direction)x].Height) * scale * vScale,
                 0
-            ) + (clockwiseVs[x] + offset) * unit;
+            ) + (clockwiseVs[x] + offset) * scale;
         }
     }
     public float getRequestedValue(DrawMode drawMode)
@@ -83,7 +82,7 @@ public class CitySquare
                 return this.Height;
         }
     }
-    void CreateMesh()
+    /*void CreateMesh()
     {
         Vector3[] mVertices = new Vector3[]{ vertices[0], vertices[1], vertices[2], vertices[1], vertices[3], vertices[2],};
         int[] triangles = new int[] { 0, 1, 2, 3, 4, 5};
@@ -100,7 +99,7 @@ public class CitySquare
         mesh.vertices = mVertices;
         mesh.triangles = triangles  ;
         mesh.colors32 = colors.ToArray();
-    }
+    }*/
     void UpdateFromNeighbors(Direction direction, CityPoint newNeighbor)
     {
         corners[direction] = newNeighbor;

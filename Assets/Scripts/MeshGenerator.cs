@@ -23,13 +23,20 @@ public class MeshGenerator : MonoBehaviour
         color32s = new List<Color32>();
         vertices = new List<Vector3>();
         triangles = new List<int>();
+        float uUnit = 1f / width;
+        float vUnit = 1f / height;
         for (int x = 0; x < cityTiles.GetLength(0); x++)
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
                 CitySquare cityTile = cityTiles[x, y];
                 Vector3[] tileVerts = cityTile.vertices;
+                Vector2 uvTL = new Vector2(uUnit * x, vUnit * y);
+                /*Vector2 uvTR = new Vector2(uUnit * x, vUnit * y);
+                Vector2 uvBL = new Vector2(uUnit * x, vUnit * y);
+                Vector2 uvBR = new Vector2(uUnit * x, vUnit * y);*/
                 Vector3[] mVertices = new Vector3[] { tileVerts[0], tileVerts[1], tileVerts[2], tileVerts[1], tileVerts[3], tileVerts[2], };
+                Vector2[] mUVs = new Vector2[] { uvTL, uvTL, uvTL, uvTL , uvTL, uvTL };
                 int currVerts = vertices.Count;
                 List<int> trianglesToAdd = new List<int>();
                 List<Color32> colors = new List<Color32>(6);
@@ -43,6 +50,7 @@ public class MeshGenerator : MonoBehaviour
                 vertices.AddRange(mVertices);
                 triangles.AddRange(trianglesToAdd);
                 color32s.AddRange(colors.ToArray());
+                uvs.AddRange(mUVs);
             }
         }
 
@@ -52,7 +60,7 @@ public class MeshGenerator : MonoBehaviour
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.colors32 = color32s.ToArray();
-        //mesh.uv = uvs.ToArray();
+        mesh.uv = uvs.ToArray();
         /*for (int x = 1; x < numMeshes; x++)
         {
             mesh.SetTriangles(triangles[x], x, true, (x * trianglesPerSubMesh));
@@ -103,7 +111,7 @@ public class MeshGenerator : MonoBehaviour
                     scale,
                     vScale,
                     drawMode,
-                    new Vector3((x - halfWidth + 1f) * scale, 0, (halfHeight - y - 1f) * scale)
+                    new Vector3((x - halfWidth + .5f), 0, (halfHeight - y - .5f))
                 );
             }
         }

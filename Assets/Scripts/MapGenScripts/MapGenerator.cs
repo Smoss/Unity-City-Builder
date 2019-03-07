@@ -120,7 +120,7 @@ public class MapGenerator : MonoBehaviour
         MeshGenerator meshGen = GetComponent<MeshGenerator>();
         Mesh mesh = meshGen.GenerateMesh(cityPoints, scale, verticalScale, colorSet[0], colorSet[1], width, height, drawMode);
         GetComponent<MeshFilter>().mesh = mesh;
-        Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode);
+        Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
     }
 
