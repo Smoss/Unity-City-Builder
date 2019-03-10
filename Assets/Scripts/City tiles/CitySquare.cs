@@ -52,7 +52,7 @@ public class CitySquare
         vertices = new Vector3[4];
         corners = new Dictionary<Direction, CityPoint>();
         scale = _scale;
-        for(int x = 0; x < 4; x++)
+        for (int x = 0; x < 4; x++)
         {
             CityPoint corner = _corners[x];
             corners.Add((Direction)x, corner);
@@ -103,6 +103,15 @@ public class CitySquare
     void UpdateFromNeighbors(Direction direction, CityPoint newNeighbor)
     {
         corners[direction] = newNeighbor;
+    }
+
+    public void AddProperty(GameObject ReProperty)//, Space relativeTo)
+    {
+
+    }
+    public void AddPropertyCentral(GameObject ReProperty, float vScale)
+    {
+        ReProperty.transform.position = offset + new Vector3(0, (height) * vScale + .5f);
     }
     // Start is called before the first frame update
     void Start()

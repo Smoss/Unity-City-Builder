@@ -36,9 +36,12 @@ public class MapGenerator : MonoBehaviour
 
     float[,,] map;
     private CityPoint[,] cityPoints;
-    public GameObject CitySquareBase;
+    List<GameObject> Properties;
+    public GameObject Factory;
     public float scale;
-    public float verticalScale;
+    public float vScale;
+    CitySquare[,] cityTiles;
+    int[] maxLoc;
     // Start is called before the first frame update
     void Start() {
         GenerateMap();
@@ -81,10 +84,20 @@ public class MapGenerator : MonoBehaviour
     }
 
     public void GenerateMap() {
+        if (Properties != null)
+        {
+            foreach (GameObject g in Properties) {
+                if (g != Factory)
+                    Destroy(g);
+            }
+        }
+        Properties = new List<GameObject>();
+        Properties.Add(Factory);
         aWidth = width + 1;
         aHeight = height + 1;
         map = new float[2, aWidth, aHeight];
         cityPoints = new CityPoint[aWidth, aHeight];
+        cityTiles = new CitySquare[width, height];
         halfHeight = aHeight / 2f;
         halfWidth = aWidth / 2f;
         colorSet = new Color32[2];
@@ -105,11 +118,8 @@ public class MapGenerator : MonoBehaviour
         {
             BuildMapAtIndex(1, fertilityScale * Mathf.Pow(fertilityLacunarity, (float)i), Mathf.Pow(fertilityPersistence, i), pseudoRandom, fertilityOffset);
         }
-        if (drawMode != DrawMode.Terain)
-        {
-            SmoothMap((int)DrawMode.Terain);
-        }
-        SmoothMap((int)drawMode);
+        SmoothMap((int)DrawMode.Terain);
+        SmoothMap((int)DrawMode.Fertility);
         for (int x = 0; x < aWidth; x++)
         {
             for (int y = 0; y < aHeight; y++)
@@ -117,8 +127,9 @@ public class MapGenerator : MonoBehaviour
                 cityPoints[x, y] = new CityPoint(map[0, x, y], map[1, x, y]);
             }
         }
-        MeshGenerator meshGen = GetComponent<MeshGenerator>();
-        Mesh mesh = meshGen.GenerateMesh(cityPoints, scale, verticalScale, colorSet[0], colorSet[1], width, height, drawMode);
+        MakeTiles(cityPoints, width, height, scale, vScale);
+        Mesh mesh = MeshGenerator.GenerateMesh(scale, vScale, drawMode, cityTiles);
+        cityTiles[maxLoc[0], maxLoc[1]].AddPropertyCentral(Factory, vScale);
         GetComponent<MeshFilter>().mesh = mesh;
         Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
@@ -126,7 +137,7 @@ public class MapGenerator : MonoBehaviour
 
     float[] SmoothMap(int mapIndex) {
 
-
+        maxLoc = new int[2];
         float maxValue = -100;
         float minValue = 100;
         for (int x = 0; x < aWidth; x++)
@@ -134,7 +145,11 @@ public class MapGenerator : MonoBehaviour
             for (int y = 0; y < aHeight; y++)
             {
                 minValue = Mathf.Min(minValue, map[mapIndex, x, y]);
-                maxValue = Mathf.Max(maxValue, map[mapIndex, x, y]);
+                if (map[mapIndex, x, y] > maxValue)
+                {
+                    maxValue = map[mapIndex, x, y];
+                    maxLoc = new int[] { Mathf.Min(x, width), Mathf.Min(y, height) };
+                }
             }
         }
 
@@ -161,19 +176,34 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    /*private void OnDrawGizmos()
+    void MakeTiles(CityPoint[,] cityPoints, int width, int height, float scale, float vScale)
     {
-        if (map != null)
+        float halfWidth = width / 2f;
+        float halfHeight = height / 2f;
+        float widthOffset = width % 2 * .5f;
+        float heightOffset = height % 2 * .5f;
+        for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
-                for (int y = 0; y < height; y++)
+                //CitySquareMeshes[x, y] = Instantiate(CitySquareBase, transform.position + , Quaternion.identity);
+                List<CityPoint> neighbors = new List<CityPoint>();
+                for (int v = 0; v < 2; v++)
                 {
-                    Gizmos.color = (map[x, y] == 1) ? Color.black : Color.white;
-                    Vector3 pos = new Vector3(-width / 2 + x + .5f, 0, -height / 2 + y + .5f);
-                    Gizmos.DrawCube(pos, Vector3.one);
+                    for (int u = 0; u < 2; u++)
+                    {
+                        neighbors.Add(cityPoints[u + x, v + y]);
+                    }
                 }
+                cityTiles[x, y] = new CitySquare();
+                cityTiles[x, y].CreateData(
+                    neighbors.ToArray(),
+                    scale,
+                    vScale,
+                    drawMode,
+                    new Vector3((x - halfWidth + widthOffset), 0, (halfHeight - y - heightOffset))
+                );
             }
         }
-    }*/
+    }
 }
