@@ -4,7 +4,6 @@ using UnityEngine;
 
 public enum Direction       { NW, NE, SW, SE };
 public enum MirrorDirection { SE, SW, NE, NW };
-
 public class CitySquare
 {
     static Direction[] clockwise = new Direction[] {
@@ -30,6 +29,29 @@ public class CitySquare
     float height;
     float fertility;
     Vector3 offset;
+    float realEstateValue;
+    HashSet<CitySquare> neighbors;
+    RealEstate realEstate;
+    //float productivity;
+    public float Productivity {
+        get { return realEstate != null ? realEstate.Productivity : 0; }
+    }
+    public float AvgProductivity
+    {
+        get { return realEstate != null ? realEstate.AvgProductivity : 0; }
+    }
+    public float RealEstateValue {
+        get { return realEstateValue; }
+        set { realEstateValue = value; }
+    }
+    public RealEstate RealEstate
+    {
+        get { return realEstate; }
+    }
+    public HashSet<CitySquare> Neighbors
+    {
+        get { return neighbors; }
+    }
     public float Height
     {
         get { return height; }
@@ -38,7 +60,12 @@ public class CitySquare
     {
         get { return fertility; }
     }
-    public void CreateData(
+    public void addNeighbor(CitySquare _neighbor)
+    {
+        _neighbor.Neighbors.Add(this);
+        this.neighbors.Add(_neighbor);
+    }
+    public CitySquare(
         CityPoint[] _corners,
         float _scale,
         float _vScale,
@@ -46,6 +73,7 @@ public class CitySquare
         Vector3 _offset
     )
     {
+        neighbors = new HashSet<CitySquare>();
         offset = _offset;
         drawMode = _drawMode;
         vScale = _vScale;
@@ -62,15 +90,17 @@ public class CitySquare
         }
         height /= 4;
         fertility /= 4;
+        height *= vScale;
         for (int x = 0; x < 4; x++)
         {
             Vector3 newOffset = clockwiseVs[x] + offset;
             vertices[x] = new Vector3(
                 0,
-                (corners[(Direction)x].Height) * scale * vScale,
+                (corners[(Direction)x].Height) * scale,
                 0
             ) + (clockwiseVs[x] + offset) * scale;
         }
+        realEstateValue = 0f;
     }
     public float getRequestedValue(DrawMode drawMode)
     {
@@ -82,24 +112,6 @@ public class CitySquare
                 return this.Height;
         }
     }
-    /*void CreateMesh()
-    {
-        Vector3[] mVertices = new Vector3[]{ vertices[0], vertices[1], vertices[2], vertices[1], vertices[3], vertices[2],};
-        int[] triangles = new int[] { 0, 1, 2, 3, 4, 5};
-        List<Color32> colors = new List<Color32>(6);
-        float alphaValue = getRequestedValue(drawMode);
-        byte alpha = (byte)(alphaValue * 255f);
-        for (int x = 0; x < 2; x ++)
-        {
-            colors.Add(new Color32(0, 0, 0, alpha));
-            colors.Add(new Color32(0, 0, 0, alpha));
-            colors.Add(new Color32(0, 0, 0, alpha));
-        }
-        Mesh mesh = new Mesh();
-        mesh.vertices = mVertices;
-        mesh.triangles = triangles  ;
-        mesh.colors32 = colors.ToArray();
-    }*/
     void UpdateFromNeighbors(Direction direction, CityPoint newNeighbor)
     {
         corners[direction] = newNeighbor;
@@ -109,9 +121,16 @@ public class CitySquare
     {
 
     }
-    public void AddPropertyCentral(GameObject ReProperty, float vScale)
+    public void AddPropertyCentral(GameObject ReProperty)
     {
-        ReProperty.transform.position = offset + new Vector3(0, (height) * vScale + .5f);
+        RealEstate _realEstate = ReProperty.GetComponent<RealEstate>();
+        if (realEstate != null || _realEstate == null)
+        {
+            return;
+        }
+        realEstate = _realEstate;
+        realEstate.price = RealEstateValue;
+        ReProperty.transform.position = offset + new Vector3(0, (height) + .5f);
     }
     // Start is called before the first frame update
     void Start()

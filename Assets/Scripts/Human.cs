@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class Human
+public class Human: MonoBehaviour
 {
     Qualification qualification;
     public Qualification Qualification
@@ -14,9 +14,7 @@ public class Human
     int birthday;
     Guid id;
     Occupation occupation;
-    public Guid ID {
-        get { return id; }
-    }
+    CityManager cityManager;
     public Occupation Occupation
     {
         get { return occupation; }
@@ -25,12 +23,13 @@ public class Human
             value.Employee = this;
         }
     }
-    public Human(int _age, Qualification _qualification, int _birthday)
+    public void init(int _age, CityManager _cityManager)//, Qualification _qualification, int _birthday)
     {
         age = _age;
-        qualification = _qualification;
-        birthday = _birthday;
+        //qualification = _qualification;
+        //birthday = _birthday;
         id = Guid.NewGuid();
+        cityManager = _cityManager;
     }
     //public 
 }

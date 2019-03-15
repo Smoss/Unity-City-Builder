@@ -1,16 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public enum Qualification { NoHS, HS, Bachelors, Masters, PHD, Athlete = -1, Entrepeneur = -2 }
 public class Occupation
 {
     Qualification requirements;
+    readonly Guid id;
     public Qualification Requirements
     {
         get { return requirements; }
     }
     Human employee;
+    float income;
+    public float Income
+    {
+        get { return income; }
+    }
     public Human Employee {
         get { return employee; }
         set
@@ -37,8 +44,10 @@ public class Occupation
     {
 
     }
-    public Occupation(Qualification _requirements)
+    public Occupation(Qualification _requirements, int _income)
     {
-
+        this.income = _income;
+        this.requirements = _requirements;
+        this.id = Guid.NewGuid();
     }
 }

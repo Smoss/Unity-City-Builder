@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum DrawMode { Terain, Fertility };
-
+public enum DrawMode { Terain, Fertility, PropertyValue  };
 public class MapGenerator : MonoBehaviour
 {
 
@@ -28,23 +27,24 @@ public class MapGenerator : MonoBehaviour
     public string seed;
     public bool useRandomSeed;
     public bool autoUpdate;
-    
+
     public int heightNoisePasses;
     public int fertilityNoisePasses;
 
-    Color32[] colorSet;
+    public Color32[] colorSet;
 
     float[,,] map;
     private CityPoint[,] cityPoints;
-    List<GameObject> Properties;
-    public GameObject Factory;
     public float scale;
     public float vScale;
     CitySquare[,] cityTiles;
     int[] maxLoc;
-    // Start is called before the first frame update
-    void Start() {
-        GenerateMap();
+    public int[] MaxLoc {
+        get { return maxLoc; }
+    }
+    public CitySquare[,] CityTiles
+    {
+        get { return cityTiles; }
     }
 
     // Update is called once per frame
@@ -83,26 +83,14 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    public void GenerateMap() {
-        if (Properties != null)
-        {
-            foreach (GameObject g in Properties) {
-                if (g != Factory)
-                    Destroy(g);
-            }
-        }
-        Properties = new List<GameObject>();
-        Properties.Add(Factory);
+    public float[,,] GenerateMap() {
         aWidth = width + 1;
         aHeight = height + 1;
-        map = new float[2, aWidth, aHeight];
+        map = new float[3, aWidth, aHeight];
         cityPoints = new CityPoint[aWidth, aHeight];
         cityTiles = new CitySquare[width, height];
         halfHeight = aHeight / 2f;
         halfWidth = aWidth / 2f;
-        colorSet = new Color32[2];
-        colorSet[0] = Color.green;
-        colorSet[1] = Color.red;
         //RandomFillMap();
         if (useRandomSeed)
         {
@@ -129,10 +117,10 @@ public class MapGenerator : MonoBehaviour
         }
         MakeTiles(cityPoints, width, height, scale, vScale);
         Mesh mesh = MeshGenerator.GenerateMesh(scale, vScale, drawMode, cityTiles);
-        cityTiles[maxLoc[0], maxLoc[1]].AddPropertyCentral(Factory, vScale);
         GetComponent<MeshFilter>().mesh = mesh;
         Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
+        return map;
     }
 
     float[] SmoothMap(int mapIndex) {
@@ -148,7 +136,7 @@ public class MapGenerator : MonoBehaviour
                 if (map[mapIndex, x, y] > maxValue)
                 {
                     maxValue = map[mapIndex, x, y];
-                    maxLoc = new int[] { Mathf.Min(x, width), Mathf.Min(y, height) };
+                    maxLoc = new int[] { Mathf.Min(x, width - 1), Mathf.Min(y, height - 1) };
                 }
             }
         }
@@ -195,14 +183,21 @@ public class MapGenerator : MonoBehaviour
                         neighbors.Add(cityPoints[u + x, v + y]);
                     }
                 }
-                cityTiles[x, y] = new CitySquare();
-                cityTiles[x, y].CreateData(
+                cityTiles[x, y] = new CitySquare(
                     neighbors.ToArray(),
                     scale,
                     vScale,
                     drawMode,
                     new Vector3((x - halfWidth + widthOffset), 0, (halfHeight - y - heightOffset))
                 );
+                if( x > 0)
+                {
+                    cityTiles[x - 1, y].addNeighbor(cityTiles[x, y]);
+                }
+                if (y > 0)
+                {
+                    cityTiles[x, y - 1].addNeighbor(cityTiles[x, y]);
+                }
             }
         }
     }
