@@ -92,3 +92,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 0
   price: 0
+  pollution: 50

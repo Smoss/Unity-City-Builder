@@ -14,6 +14,7 @@ public class RealEstate : MonoBehaviour
     public float price;
     float productivity;
     float avgProductivity;
+    public float pollution;
     public float Productivity
     {
         get { return productivity; }
@@ -50,13 +51,13 @@ public class RealEstate : MonoBehaviour
                 occupations.Add(Qualification.Bachelors, new List<Occupation>());
                 for (int x = 0; x < 10; x++)
                 {
-                    occupations[Qualification.NoHS].Add(new Occupation(Qualification.NoHS, 5000));
-                    productivity += 5000;
+                    occupations[Qualification.NoHS].Add(new Occupation(Qualification.NoHS, 40000));
+                    productivity += 40000;
                 }
-                occupations[Qualification.HS].Add(new Occupation(Qualification.HS, 7000));
-                productivity += 7000;
-                occupations[Qualification.HS].Add(new Occupation(Qualification.Bachelors, 10000));
-                productivity += 10000;
+                occupations[Qualification.HS].Add(new Occupation(Qualification.HS, 60000));
+                productivity += 60000;
+                occupations[Qualification.HS].Add(new Occupation(Qualification.Bachelors, 100000));
+                productivity += 100000;
                 maxOccupants = 0;
                 avgProductivity = productivity / numOccs;
                 break;

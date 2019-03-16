@@ -16,7 +16,10 @@ public class CityManager : MonoBehaviour
     public DrawMode drawMode;
     Color32[] colorSet;
     float[,,] map;
-    float timeSince;
+    //float timeSince;
+    public int tick;
+    public int commuteDist;
+    public float pollutionExp;
     public Guid ID
     {
         get { return id; }
@@ -31,12 +34,19 @@ public class CityManager : MonoBehaviour
     void Update()
     {
         //Change this to use ticks
-        timeSince += Time.deltaTime;
-        if(timeSince > 20)
+        tick++;
+        if(tick > 1000)
         {
             CalculatePropertyValues();
             ScheduleBuilds();
-            timeSince = 0;
+            tick = 0;
+        }
+    }
+    private void OnValidate()
+    {
+        if (commuteDist <= 0)
+        {
+            commuteDist = 1;
         }
     }
 
@@ -50,6 +60,7 @@ public class CityManager : MonoBehaviour
                 {
                     GameObject newRE = Instantiate(Home);
                     Properties.Add(newRE);
+                    newRE.transform.parent = this.transform;
                     cityTiles[x, y].AddPropertyCentral(newRE);
                 }
             }
@@ -58,20 +69,24 @@ public class CityManager : MonoBehaviour
 
     private void CalculatePropertyValues()
     {
-        float maxValue = 0;
+        float minValue = float.MaxValue;
+        float maxValue = float.MinValue;
         for (int x = 0; x < cityTiles.GetLength(0); x++)
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
-                HashSet<CitySquareDist> nearbyTiles = NearbyTiles(5, cityTiles[x, y]);
-                float propertyValue = 0;
+                CitySquare localSquare = cityTiles[x, y];
+                HashSet<CitySquareDist> nearbyTiles = NearbyTiles(commuteDist, localSquare);
+                float propertyValue = -Mathf.Pow(localSquare.Pollution, pollutionExp);
                 foreach (CitySquareDist tile in nearbyTiles)
                 {
-                    propertyValue += tile.tile.AvgProductivity / tile.distance;
+                    CitySquare square = tile.tile;
+                    propertyValue += square.AvgProductivity * 10 / (2 * tile.distance) - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
                 }
-                cityTiles[x, y].RealEstateValue = propertyValue;
+                localSquare.RealEstateValue = propertyValue;
                 propertyValues[x, y] = propertyValue;
                 maxValue = Mathf.Max(propertyValue, maxValue);
+                minValue = Mathf.Min(propertyValue, minValue);
             }
         }
         if(drawMode == DrawMode.PropertyValue)
@@ -80,7 +95,7 @@ public class CityManager : MonoBehaviour
             {
                 for (int y = 0; y < cityTiles.GetLength(1); y++)
                 {
-                    map[2, x, y] = Mathf.InverseLerp(0, maxValue, propertyValues[x, y]);
+                    map[2, x, y] = Mathf.InverseLerp(minValue, maxValue, propertyValues[x, y]);
                 }
             }
             Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
@@ -98,7 +113,7 @@ public class CityManager : MonoBehaviour
             foreach (CitySquare tile in tilesToSearch)
             {
                 CitySquareDist neighborTile = new CitySquareDist(dist, tile);
-                if(!nearbyTiles.Contains(neighborTile))
+                if(!nearbyTiles.Contains(neighborTile) && neighborTile.tile != originalTile)
                 {
                     nearbyTiles.Add(neighborTile);
                     nextTilesToSearch.UnionWith(tile.Neighbors);
@@ -110,7 +125,7 @@ public class CityManager : MonoBehaviour
     }
     private void init()
     {
-        timeSince = 20;
+        tick = 1000;
         if (Properties != null)
         {
             foreach (GameObject g in Properties)
@@ -148,8 +163,18 @@ public class CitySquareDist
         distance = _distance;
         tile = _tile;
     }
+
     public override bool Equals(System.Object obj)
     {
-        return tile == obj;
+        if(obj is CitySquareDist)
+        {
+            return tile == ((CitySquareDist)obj).tile;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return -1987462863 + EqualityComparer<CitySquare>.Default.GetHashCode(tile);
     }
 }
