@@ -33,6 +33,7 @@ public class CitySquare
     HashSet<CitySquare> neighbors;
     RealEstate realEstate;
     //float productivity;
+    CityManager city;
     public float Productivity {
         get { return realEstate != null ? realEstate.Productivity : 0; }
     }
@@ -130,30 +131,15 @@ public class CitySquare
     {
 
     }
-    public void AddPropertyCentral(GameObject ReProperty)
+    public void AddPropertyCentral(RealEstate ReProperty)
     {
-        RealEstate _realEstate = ReProperty.GetComponent<RealEstate>();
-        if (realEstate != null || _realEstate == null)
+        if (realEstate != null)
         {
             return;
         }
-        realEstate = _realEstate;
+        realEstate = ReProperty;
         realEstate.price = RealEstateValue;
         ReProperty.transform.position = offset + new Vector3(0, (height) + .5f);
-    }
-    // Start is called before the first frame update
-    void Start()
-    {
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-    private void OnDestroy()
-    {
-        
     }
 
     public override bool Equals(object obj)

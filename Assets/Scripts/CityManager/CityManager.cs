@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class CityManager : MonoBehaviour
 {
-    HashSet<GameObject> Properties;
+    HashSet<RealEstate> Properties;
     public GameObject Factory;
     public GameObject Home;
     public MapGenerator MapGenerator;
@@ -15,11 +15,15 @@ public class CityManager : MonoBehaviour
     readonly Guid id;
     public DrawMode drawMode;
     Color32[] colorSet;
-    float[,,] map;
+    List<float[,]> map;
     //float timeSince;
     public int tick;
     public int commuteDist;
     public float pollutionExp;
+    private float maxREValue;
+    private float minREValue;
+    //public Terrain terrain;
+    //private TerrainData terrainData;
     public Guid ID
     {
         get { return id; }
@@ -33,12 +37,22 @@ public class CityManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(Input.GetMouseButtonDown(0))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit = new RaycastHit();
+            if (Physics.Raycast(ray, out hit))
+            {
+                Debug.Log("Mouse Down hit: " + hit.collider.name);
+            }
+        }
         //Change this to use ticks
         tick++;
         if(tick > 1000)
         {
             CalculatePropertyValues();
             ScheduleBuilds();
+            SetColors();
             tick = 0;
         }
     }
@@ -47,6 +61,14 @@ public class CityManager : MonoBehaviour
         if (commuteDist <= 0)
         {
             commuteDist = 1;
+        }
+    }
+
+    private void SetColors()
+    {
+        foreach(RealEstate estate in Properties)
+        {
+            estate.SetTexture(minREValue, maxREValue);
         }
     }
 
@@ -59,9 +81,10 @@ public class CityManager : MonoBehaviour
                 if(cityTiles[x, y].RealEstateValue > 1000 && cityTiles[x, y].RealEstate == null)
                 {
                     GameObject newRE = Instantiate(Home);
-                    Properties.Add(newRE);
+                    RealEstate newREVal = newRE.GetComponent<RealEstate>();
+                    Properties.Add(newREVal);
                     newRE.transform.parent = this.transform;
-                    cityTiles[x, y].AddPropertyCentral(newRE);
+                    cityTiles[x, y].AddPropertyCentral(newREVal);
                 }
             }
         }
@@ -69,8 +92,8 @@ public class CityManager : MonoBehaviour
 
     private void CalculatePropertyValues()
     {
-        float minValue = float.MaxValue;
-        float maxValue = float.MinValue;
+        minREValue = float.MaxValue;
+        maxREValue = float.MinValue;
         for (int x = 0; x < cityTiles.GetLength(0); x++)
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
@@ -85,8 +108,8 @@ public class CityManager : MonoBehaviour
                 }
                 localSquare.RealEstateValue = propertyValue;
                 propertyValues[x, y] = propertyValue;
-                maxValue = Mathf.Max(propertyValue, maxValue);
-                minValue = Mathf.Min(propertyValue, minValue);
+                maxREValue = Mathf.Max(propertyValue, maxREValue);
+                minREValue = Mathf.Min(propertyValue, minREValue);
             }
         }
         if(drawMode == DrawMode.PropertyValue)
@@ -95,10 +118,10 @@ public class CityManager : MonoBehaviour
             {
                 for (int y = 0; y < cityTiles.GetLength(1); y++)
                 {
-                    map[2, x, y] = Mathf.InverseLerp(minValue, maxValue, propertyValues[x, y]);
+                    map[2][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
                 }
             }
-            Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
+            Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
             GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
         }
     }
@@ -128,18 +151,19 @@ public class CityManager : MonoBehaviour
         tick = 1000;
         if (Properties != null)
         {
-            foreach (GameObject g in Properties)
+            foreach (RealEstate g in Properties)
             {
-                if (g != Factory)
+                if (g != Factory.GetComponent<RealEstate>())
                     Destroy(g);
             }
         }
-        Properties = new HashSet<GameObject>();
-        Properties.Add(Factory);
+        Properties = new HashSet<RealEstate>();
+        Properties.Add(Factory.GetComponent<RealEstate>());
     }
     public void GenerateMap()
     {
         init();
+        //terrainData = terrain.terrainData;
         colorSet = new Color32[2];
         colorSet[0] = Color.green;
         colorSet[1] = Color.red;
@@ -149,8 +173,23 @@ public class CityManager : MonoBehaviour
 
         cityTiles = MapGenerator.CityTiles;
         propertyValues = new float[MapGenerator.width, MapGenerator.height];
-        MapGenerator.CityTiles[MapGenerator.MaxLoc[0], MapGenerator.MaxLoc[1]].AddPropertyCentral(Factory);
-        Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
+        MapGenerator.CityTiles[MapGenerator.MaxLoc[0], MapGenerator.MaxLoc[1]].AddPropertyCentral(Factory.GetComponent<RealEstate>());
+        Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
+        int width = cityTiles.GetLength(0);
+        int height = cityTiles.GetLength(1);
+        float[,] tMap = new float[height, width];
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                tMap[y, x] = map[0][x, y];
+            }
+        }
+        //terrainData.size = new Vector3(height, 1, width);
+        //terrainData.SetHeights(0, 0, tMap);
+        //RenderTexture = new RenderTexture()
+        //terrainData.heightmapTexture = tex;
+        //terrain.terrainData = terrainData;
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
     }
 }

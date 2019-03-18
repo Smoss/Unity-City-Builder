@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -33,12 +34,13 @@ public class MapGenerator : MonoBehaviour
 
     public Color32[] colorSet;
 
-    float[,,] map;
+    List<float [,]> map;
     private CityPoint[,] cityPoints;
     public float scale;
     public float vScale;
     CitySquare[,] cityTiles;
     int[] maxLoc;
+    public MeshCollider collider;
     public int[] MaxLoc {
         get { return maxLoc; }
     }
@@ -83,10 +85,14 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    public float[,,] GenerateMap() {
+    public List<float[,]> GenerateMap() {
         aWidth = width + 1;
         aHeight = height + 1;
-        map = new float[3, aWidth, aHeight];
+        map = new List<float[,]>();
+        for (int x = 0; x < 3; x++)
+        {
+            map.Add(new float[aWidth, aHeight]);
+        }
         cityPoints = new CityPoint[aWidth, aHeight];
         cityTiles = new CitySquare[width, height];
         halfHeight = aHeight / 2f;
@@ -112,14 +118,13 @@ public class MapGenerator : MonoBehaviour
         {
             for (int y = 0; y < aHeight; y++)
             {
-                cityPoints[x, y] = new CityPoint(map[0, x, y], map[1, x, y]);
+                cityPoints[x, y] = new CityPoint(map[0][x, y], map[0][x, y]);
             }
         }
         MakeTiles(cityPoints, width, height, scale, vScale);
         Mesh mesh = MeshGenerator.GenerateMesh(scale, vScale, drawMode, cityTiles);
         GetComponent<MeshFilter>().mesh = mesh;
-        Texture2D tex = TextureGenerator.TextureFromHeightMap(map, (int)drawMode, colorSet);
-        GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
+        collider.sharedMesh = mesh;
         return map;
     }
 
@@ -132,10 +137,10 @@ public class MapGenerator : MonoBehaviour
         {
             for (int y = 0; y < aHeight; y++)
             {
-                minValue = Mathf.Min(minValue, map[mapIndex, x, y]);
-                if (map[mapIndex, x, y] > maxValue)
+                minValue = Mathf.Min(minValue, map[mapIndex][x, y]);
+                if (map[mapIndex][x, y] > maxValue)
                 {
-                    maxValue = map[mapIndex, x, y];
+                    maxValue = map[mapIndex][x, y];
                     maxLoc = new int[] { Mathf.Min(x, width - 1), Mathf.Min(y, height - 1) };
                 }
             }
@@ -145,7 +150,7 @@ public class MapGenerator : MonoBehaviour
         {
             for (int y = 0; y < aHeight; y++)
             {
-                map[mapIndex, x, y] = Mathf.InverseLerp(minValue, maxValue, map[mapIndex, x, y]);
+                map[mapIndex][x, y] = Mathf.InverseLerp(minValue, maxValue, map[mapIndex][x, y]);
             }
         }
         return new float[] { minValue, maxValue };
@@ -159,7 +164,7 @@ public class MapGenerator : MonoBehaviour
         {
             for(int y=0; y < aHeight; y++)
             {
-                map[mapIndex, x, y] += (Mathf.PerlinNoise((x - halfWidth) / newScale + xOffset, (y - halfHeight) / newScale + yOffset) - .5f) * 2 * persistance;
+                map[mapIndex][x, y] += (Mathf.PerlinNoise((x - halfWidth) / newScale + xOffset, (y - halfHeight) / newScale + yOffset) - .5f) * 2 * persistance;
             }
         }
     }

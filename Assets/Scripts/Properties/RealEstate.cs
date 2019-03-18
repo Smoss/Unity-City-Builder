@@ -15,6 +15,18 @@ public class RealEstate : MonoBehaviour
     float productivity;
     float avgProductivity;
     public float pollution;
+    public MeshRenderer meshRenderer;
+    public Color32 highColor;
+    public Color32 lowColor;
+    public Color32 actualColor;
+    public void SetTexture(float min, float max)
+    {
+        if(meshRenderer != null)
+        {
+            actualColor = Color32.Lerp(lowColor, highColor, Mathf.InverseLerp(min, max, price));
+            meshRenderer.material.mainTexture = TextureGenerator.TextureFromColor(actualColor);
+        }
+    }
     public float Productivity
     {
         get { return productivity; }
