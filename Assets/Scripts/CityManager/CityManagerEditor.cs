@@ -19,5 +19,9 @@ public class CityManagerEditor : Editor
         {
             cityManager.GenerateMap();
         }
+        if (GUILayout.Button("Draw Texture"))
+        {
+            cityManager.drawTexture();
+        }
     }
 }

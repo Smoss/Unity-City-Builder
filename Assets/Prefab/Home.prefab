@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1737524409338255294}
   - component: {fileID: 435690947979626768}
   - component: {fileID: 1296489324749668373}
+  - component: {fileID: 3655050339004433633}
   m_Layer: 0
   m_Name: Home
   m_TagString: Untagged
@@ -103,3 +104,16 @@ MonoBehaviour:
   actualColor:
     serializedVersion: 2
     rgba: 0
+--- !u!65 &3655050339004433633
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7586234082099869460}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

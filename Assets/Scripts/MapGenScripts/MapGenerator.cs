@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum DrawMode { Terain, Fertility, PropertyValue  };
+public enum DrawMode { Terain, Fertility, PropertyValue, RoadMap  };
 public class MapGenerator : MonoBehaviour
 {
 
@@ -89,7 +89,7 @@ public class MapGenerator : MonoBehaviour
         aWidth = width + 1;
         aHeight = height + 1;
         map = new List<float[,]>();
-        for (int x = 0; x < 3; x++)
+        for (int x = 0; x < 4; x++)
         {
             map.Add(new float[aWidth, aHeight]);
         }

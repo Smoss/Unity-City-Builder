@@ -34,6 +34,11 @@ public class CitySquare
     RealEstate realEstate;
     //float productivity;
     CityManager city;
+    bool hasRoad;
+    public bool HasRoad {
+        get { return hasRoad; }
+        set { hasRoad = value; }
+    }
     public float Productivity {
         get { return realEstate != null ? realEstate.Productivity : 0; }
     }
@@ -83,6 +88,7 @@ public class CitySquare
         Vector3 _offset
     )
     {
+        hasRoad = false;
         neighbors = new HashSet<CitySquare>();
         offset = _offset;
         drawMode = _drawMode;

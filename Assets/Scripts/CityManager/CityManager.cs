@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class CityManager : MonoBehaviour
+public class CityManager : ClickAccepter
 {
     HashSet<RealEstate> Properties;
     public GameObject Factory;
@@ -28,6 +28,20 @@ public class CityManager : MonoBehaviour
     {
         get { return id; }
     }
+    public void BuildRoad(Vector2 vector)
+    {
+        int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
+        var roads = map[3];
+        var road = roads[xLoc, yLoc];
+        roads[xLoc, yLoc] = road + 1 % 2;
+        cityTiles[xLoc, yLoc].HasRoad = !cityTiles[xLoc, yLoc].HasRoad;
+        Debug.Log("Mouse Down hit: " + xLoc + ", " +  yLoc);
+        if (drawMode == DrawMode.RoadMap)
+        {
+            drawTexture();
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -43,7 +57,12 @@ public class CityManager : MonoBehaviour
             RaycastHit hit = new RaycastHit();
             if (Physics.Raycast(ray, out hit))
             {
-                Debug.Log("Mouse Down hit: " + hit.collider.name);
+                Debug.Log("Mouse Down hit: " + hit.textureCoord);
+                ClickAccepter accepter = hit.collider.GetComponent<ClickAccepter>();
+                if (accepter)
+                {
+                    accepter.Accept(hit.textureCoord);
+                }
             }
         }
         //Change this to use ticks
@@ -121,8 +140,7 @@ public class CityManager : MonoBehaviour
                     map[2][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
                 }
             }
-            Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
-            GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
+            drawTexture();
         }
     }
 
@@ -154,7 +172,7 @@ public class CityManager : MonoBehaviour
             foreach (RealEstate g in Properties)
             {
                 if (g != Factory.GetComponent<RealEstate>())
-                    Destroy(g);
+                    Destroy(g.gameObject);
             }
         }
         Properties = new HashSet<RealEstate>();
@@ -174,7 +192,6 @@ public class CityManager : MonoBehaviour
         cityTiles = MapGenerator.CityTiles;
         propertyValues = new float[MapGenerator.width, MapGenerator.height];
         MapGenerator.CityTiles[MapGenerator.MaxLoc[0], MapGenerator.MaxLoc[1]].AddPropertyCentral(Factory.GetComponent<RealEstate>());
-        Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
         int width = cityTiles.GetLength(0);
         int height = cityTiles.GetLength(1);
         float[,] tMap = new float[height, width];
@@ -190,6 +207,18 @@ public class CityManager : MonoBehaviour
         //RenderTexture = new RenderTexture()
         //terrainData.heightmapTexture = tex;
         //terrain.terrainData = terrainData;
+        drawTexture();
+    }
+
+    public override void Accept(Vector2 vec)
+    {
+        BuildRoad(vec);
+    }
+
+    public void drawTexture()
+    {
+
+        Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
     }
 }
