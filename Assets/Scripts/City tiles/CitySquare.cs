@@ -37,7 +37,10 @@ public class CitySquare
     bool hasRoad;
     public bool HasRoad {
         get { return hasRoad; }
-        set { hasRoad = value; }
+        set {
+            hasRoad = value;
+            RemoveProperty();
+        }
     }
     public float Productivity {
         get { return realEstate != null ? realEstate.Productivity : 0; }
@@ -85,9 +88,11 @@ public class CitySquare
         float _scale,
         float _vScale,
         DrawMode _drawMode,
-        Vector3 _offset
+        Vector3 _offset,
+        CityManager _city
     )
     {
+        city = _city;
         hasRoad = false;
         neighbors = new HashSet<CitySquare>();
         offset = _offset;
@@ -146,6 +151,16 @@ public class CitySquare
         realEstate = ReProperty;
         realEstate.price = RealEstateValue;
         ReProperty.transform.position = offset + new Vector3(0, (height) + .5f);
+    }
+
+    public void RemoveProperty()
+    {
+        if(realEstate != null)
+        {
+            city.Properties.Remove(realEstate);
+            GameObject.Destroy(realEstate.gameObject);
+            realEstate = null;
+        }
     }
 
     public override bool Equals(object obj)

@@ -85,7 +85,7 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    public List<float[,]> GenerateMap() {
+    public List<float[,]> GenerateMap(CityManager city) {
         aWidth = width + 1;
         aHeight = height + 1;
         map = new List<float[,]>();
@@ -121,7 +121,7 @@ public class MapGenerator : MonoBehaviour
                 cityPoints[x, y] = new CityPoint(map[0][x, y], map[0][x, y]);
             }
         }
-        MakeTiles(cityPoints, width, height, scale, vScale);
+        MakeTiles(cityPoints, width, height, scale, vScale, city);
         Mesh mesh = MeshGenerator.GenerateMesh(scale, vScale, drawMode, cityTiles);
         GetComponent<MeshFilter>().mesh = mesh;
         collider.sharedMesh = mesh;
@@ -169,7 +169,7 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    void MakeTiles(CityPoint[,] cityPoints, int width, int height, float scale, float vScale)
+    void MakeTiles(CityPoint[,] cityPoints, int width, int height, float scale, float vScale, CityManager city)
     {
         float halfWidth = width / 2f;
         float halfHeight = height / 2f;
@@ -193,7 +193,8 @@ public class MapGenerator : MonoBehaviour
                     scale,
                     vScale,
                     drawMode,
-                    new Vector3((x - halfWidth + widthOffset), 0, (halfHeight - y - heightOffset))
+                    new Vector3((x - halfWidth + widthOffset), 0, (halfHeight - y - heightOffset)),
+                    city
                 );
                 if( x > 0)
                 {

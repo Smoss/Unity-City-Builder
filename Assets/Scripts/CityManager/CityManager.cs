@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class CityManager : ClickAccepter
 {
-    HashSet<RealEstate> Properties;
+    public HashSet<RealEstate> Properties;
     public GameObject Factory;
     public GameObject Home;
     public MapGenerator MapGenerator;
@@ -30,11 +30,12 @@ public class CityManager : ClickAccepter
     }
     public void BuildRoad(Vector2 vector)
     {
+        bool addRoad = Input.GetMouseButton(0);
         int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
         var roads = map[3];
         var road = roads[xLoc, yLoc];
-        roads[xLoc, yLoc] = road + 1 % 2;
-        cityTiles[xLoc, yLoc].HasRoad = !cityTiles[xLoc, yLoc].HasRoad;
+        roads[xLoc, yLoc] = addRoad ? 1 : 0;
+        cityTiles[xLoc, yLoc].HasRoad = addRoad;
         Debug.Log("Mouse Down hit: " + xLoc + ", " +  yLoc);
         if (drawMode == DrawMode.RoadMap)
         {
@@ -51,7 +52,7 @@ public class CityManager : ClickAccepter
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetMouseButtonDown(0))
+        if(Input.GetMouseButton(0) || Input.GetMouseButton(1))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
@@ -97,13 +98,18 @@ public class CityManager : ClickAccepter
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
-                if(cityTiles[x, y].RealEstateValue > 1000 && cityTiles[x, y].RealEstate == null)
+                CitySquare tile = cityTiles[x, y];
+                if (tile.RealEstateValue > 1000 && tile.RealEstate == null && !tile.HasRoad)
                 {
                     GameObject newRE = Instantiate(Home);
                     RealEstate newREVal = newRE.GetComponent<RealEstate>();
                     Properties.Add(newREVal);
                     newRE.transform.parent = this.transform;
-                    cityTiles[x, y].AddPropertyCentral(newREVal);
+                    tile.AddPropertyCentral(newREVal);
+                }
+                else if (tile.RealEstateValue < 1000 && tile.RealEstate != null)
+                {
+
                 }
             }
         }
@@ -117,13 +123,18 @@ public class CityManager : ClickAccepter
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
+                float propertyValue = 0;
                 CitySquare localSquare = cityTiles[x, y];
-                HashSet<CitySquareDist> nearbyTiles = NearbyTiles(commuteDist, localSquare);
-                float propertyValue = -Mathf.Pow(localSquare.Pollution, pollutionExp);
-                foreach (CitySquareDist tile in nearbyTiles)
+                if (!localSquare.HasRoad)
                 {
-                    CitySquare square = tile.tile;
-                    propertyValue += square.AvgProductivity * 10 / (2 * tile.distance) - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
+                    HashSet<CitySquareDist> nearbyTiles = NearbyTiles(commuteDist, localSquare);
+                    propertyValue = -Mathf.Pow(localSquare.Pollution, pollutionExp);
+                    foreach (CitySquareDist tile in nearbyTiles)
+                    {
+                        CitySquare square = tile.tile;
+                        float productivityAdd = tile.roadAccess ? (square.AvgProductivity * 10 / (2 * tile.driveDistance)) : 0;
+                        propertyValue += productivityAdd - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
+                    }
                 }
                 localSquare.RealEstateValue = propertyValue;
                 propertyValues[x, y] = propertyValue;
@@ -146,23 +157,41 @@ public class CityManager : ClickAccepter
 
     private HashSet<CitySquareDist> NearbyTiles(int nearbyDist, CitySquare originalTile)
     {
-        HashSet<CitySquareDist> nearbyTiles = new HashSet<CitySquareDist>();
-        HashSet<CitySquare> tilesToSearch = new HashSet<CitySquare>(originalTile.Neighbors);
+        Dictionary<CitySquare, CitySquareDist> nearbyTiles = new Dictionary<CitySquare, CitySquareDist>();
+        HashSet<CitySquare> tilesToSearch = new HashSet<CitySquare>();
+        foreach(CitySquare tile in originalTile.Neighbors)
+        {
+            nearbyTiles.Add(tile, new CitySquareDist(1, tile, true));
+            tilesToSearch.Add(tile);
+        }
         for (int dist = 1; dist <= nearbyDist; dist++)
         {
             HashSet<CitySquare> nextTilesToSearch = new HashSet<CitySquare>();
             foreach (CitySquare tile in tilesToSearch)
             {
-                CitySquareDist neighborTile = new CitySquareDist(dist, tile);
-                if(!nearbyTiles.Contains(neighborTile) && neighborTile.tile != originalTile)
+                foreach (CitySquare neighborTile in tile.Neighbors)
                 {
-                    nearbyTiles.Add(neighborTile);
-                    nextTilesToSearch.UnionWith(tile.Neighbors);
+                    bool hasRoadAccess = nearbyTiles[tile].roadAccess && tile.HasRoad;
+                    if(neighborTile != originalTile)
+                    {
+                        if (!nearbyTiles.ContainsKey(neighborTile))
+                        {
+                            nearbyTiles.Add(neighborTile, new CitySquareDist(1, neighborTile, hasRoadAccess));
+                            nextTilesToSearch.Add(neighborTile);
+                        }
+                        else if (hasRoadAccess && !nearbyTiles[neighborTile].roadAccess)
+                        {
+                            CitySquareDist neighbor = nearbyTiles[neighborTile];
+                            neighbor.roadAccess = true;
+                            neighbor.driveDistance = dist;
+                            nextTilesToSearch.Add(neighbor.tile);
+                        }
+                    }
                 }
             }
             tilesToSearch = nextTilesToSearch;
         }
-        return nearbyTiles;
+        return new HashSet<CitySquareDist>(nearbyTiles.Values);
     }
     private void init()
     {
@@ -187,7 +216,7 @@ public class CityManager : ClickAccepter
         colorSet[1] = Color.red;
         MapGenerator.drawMode = drawMode;
         MapGenerator.colorSet = colorSet;
-        map = MapGenerator.GenerateMap();
+        map = MapGenerator.GenerateMap(this);
 
         cityTiles = MapGenerator.CityTiles;
         propertyValues = new float[MapGenerator.width, MapGenerator.height];
@@ -226,10 +255,14 @@ public class CitySquareDist
 {
     public int distance;
     public CitySquare tile;
-    public CitySquareDist(int _distance, CitySquare _tile)
+    public bool roadAccess;
+    public int driveDistance;
+    public CitySquareDist(int _distance, CitySquare _tile, bool _roadAccess)
     {
         distance = _distance;
         tile = _tile;
+        roadAccess = _roadAccess;
+        driveDistance = _distance;
     }
 
     public override bool Equals(System.Object obj)
