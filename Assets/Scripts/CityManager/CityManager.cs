@@ -37,7 +37,6 @@ public class CityManager : ClickAccepter
         var road = roads[xLoc, yLoc];
         roads[xLoc, yLoc] = addRoad ? 1 : 0;
         cityTiles[xLoc, yLoc].HasRoad = addRoad;
-        Debug.Log("Mouse Down hit: " + xLoc + ", " +  yLoc);
         if (drawMode == DrawMode.RoadMap)
         {
             drawTexture();
@@ -59,7 +58,6 @@ public class CityManager : ClickAccepter
             RaycastHit hit = new RaycastHit();
             if (Physics.Raycast(ray, out hit))
             {
-                Debug.Log("Mouse Down hit: " + hit.textureCoord);
                 ClickAccepter accepter = hit.collider.GetComponent<ClickAccepter>();
                 if (accepter)
                 {

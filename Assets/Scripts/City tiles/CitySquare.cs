@@ -260,10 +260,10 @@ public class Route {
         Squares.Add(square);
         UsedSquares = new HashSet<CitySquare>(Squares);
     }
-    public Route(List<CitySquare> squares, CitySquare square)
+    public Route(List<CitySquare> _squares, CitySquare _square)
     {
-        Squares = new List<CitySquare>(squares);
-        squares.Add(square);
+        Squares = new List<CitySquare>(_squares);
+        Squares.Add(_square);
         UsedSquares = new HashSet<CitySquare>(Squares);
     }
 }

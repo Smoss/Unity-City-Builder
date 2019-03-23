@@ -10,7 +10,7 @@ public class RealEstate : MonoBehaviour
     public Guid id;
     public PropertyType type;
     CityManager cityManager;
-    int maxOccupants;
+    public int maxOccupants;
     public float price;
     float productivity;
     float avgProductivity;
@@ -53,7 +53,6 @@ public class RealEstate : MonoBehaviour
     void Start()
     {
         occupations = new Dictionary<Qualification, List<Occupation>>();
-        occupants = new List<Human>();
         avgProductivity = 0;
         productivity = 0;
         int numOccs = 12;
@@ -75,7 +74,6 @@ public class RealEstate : MonoBehaviour
                 avgProductivity = productivity / numOccs;
                 break;
             default:
-                maxOccupants = 1;
                 break;
         }
         id = Guid.NewGuid();
@@ -83,7 +81,11 @@ public class RealEstate : MonoBehaviour
     
     public bool addOccupant(Human human)
     {
-        if(occupants.Count == maxOccupants)
+        if (this.occupants == null)
+        {
+            occupants = new List<Human>();
+        }
+        if (occupants.Count == maxOccupants)
         {
             return false;
         }

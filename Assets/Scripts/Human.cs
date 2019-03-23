@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
-using System;
 
 public class Human: MonoBehaviour
 {
@@ -22,15 +20,18 @@ public class Human: MonoBehaviour
     CitySquare nextLocation;
     int locationPointer;
     Route routeTo;
-    Vector3 rail;
+    public Vector3 rail;
     public float dist;
+    public float distTraveled;
     void Update()
     {
         dist = (this.transform.localPosition - (nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f, 0))).magnitude;
-        if ((this.transform.localPosition - (nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f, 0))).magnitude < .1)
+        if (dist < .01 || distTraveled > rail.magnitude)
         {
             location = nextLocation;
-            if(location == destination.CitySquare)
+            this.transform.localPosition = nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f);
+            distTraveled = 0;
+            if (location == destination.CitySquare)
             {
                 if(destination == workplace)
                 {
@@ -40,24 +41,26 @@ public class Human: MonoBehaviour
                 {
                     destination = workplace;
                 }
-                transform.localPosition = nextLocation.Offset + new Vector3(0, nextLocation.Height);
                 locationPointer = 0;
                 routeTo = nextLocation.Routes[destination.CitySquare];
-                nextLocation = routeTo.Squares[locationPointer];
-                rail = nextLocation.Offset - location.Offset;
-                rail.y = (nextLocation.Height - location.Height);
+                getNextLocation();
                 return;
             }
             locationPointer++;
-            nextLocation = routeTo.Squares[locationPointer];
-            rail = nextLocation.Offset - location.Offset;
-            rail.y = (nextLocation.Height - location.Height);
-            this.transform.localPosition = nextLocation.Offset + new Vector3(0, nextLocation.Height);
+            getNextLocation();
         }
         else
         {
-            this.transform.Translate(rail * Time.deltaTime);
+            Vector3 translation = rail * Time.deltaTime * 5;
+            distTraveled += translation.magnitude;
+            this.transform.Translate(translation);
         }
+    }
+    void getNextLocation()
+    {
+        nextLocation = routeTo.Squares[locationPointer];
+        rail = nextLocation.Offset - location.Offset;
+        rail.y = (nextLocation.Height - location.Height);
     }
     public Occupation Occupation
     {
@@ -85,6 +88,7 @@ public class Human: MonoBehaviour
         nextLocation = routeTo.Squares[locationPointer];
         rail = nextLocation.Offset - location.Offset;
         rail.y = (nextLocation.Height - location.Height);
+        distTraveled = 0;
     }
     //public 
 }

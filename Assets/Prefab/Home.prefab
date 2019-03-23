@@ -92,6 +92,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 1
+  maxOccupants: 1
   price: 0
   pollution: 0
   meshRenderer: {fileID: 435690947979626768}
