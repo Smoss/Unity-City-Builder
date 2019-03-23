@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public enum Direction       { NW, NE, SW, SE };
 public enum MirrorDirection { SE, SW, NE, NW };
@@ -26,15 +27,13 @@ public class CitySquare
     Texture2D tex;
     public int xPos;
     public int zPos;
-    float height;
-    float fertility;
     Vector3 offset;
     float realEstateValue;
-    HashSet<CitySquare> neighbors;
-    RealEstate realEstate;
     //float productivity;
     CityManager city;
     bool hasRoad;
+    public Vector3 Offset { get { return offset; }}
+    public Dictionary<CitySquare, Route> Routes { get; private set; }
     public bool HasRoad {
         get { return hasRoad; }
         set {
@@ -43,45 +42,105 @@ public class CitySquare
         }
     }
     public float Productivity {
-        get { return realEstate != null ? realEstate.Productivity : 0; }
+        get { return RealEstate != null ? RealEstate.Productivity : 0; }
     }
     public float AvgProductivity
     {
-        get { return realEstate != null ? realEstate.AvgProductivity : 0; }
+        get { return RealEstate != null ? RealEstate.AvgProductivity : 0; }
     }
     public float Pollution {
-        get { return realEstate != null ? realEstate.pollution : 0; }
+        get { return RealEstate != null ? RealEstate.pollution : 0; }
     }
     public float RealEstateValue {
         get { return realEstateValue; }
         set {
             realEstateValue = value;
-            if (realEstate != null)
+            if (RealEstate != null)
             {
-                realEstate.price = value;
+                RealEstate.price = value;
             }
         }
     }
-    public RealEstate RealEstate
+    public RealEstate RealEstate { get; private set; }
+    public HashSet<CitySquare> Neighbors { get; }
+    public float Height { get; }
+    public float Fertility { get; }
+    Guid guid;
+    public float CalculatePropertyValues(int commuteDist, float pollutionExp)
     {
-        get { return realEstate; }
+        Routes = new Dictionary<CitySquare, Route>();
+        float propertyValue = 0;
+        if (!this.HasRoad)
+        {
+            HashSet<CitySquareDist> nearbyTiles = this.NearbyTiles(commuteDist);
+            propertyValue = -Mathf.Pow(this.Pollution, pollutionExp);
+            foreach (CitySquareDist tile in nearbyTiles)
+            {
+                CitySquare square = tile.tile;
+                float productivityAdd = tile.roadAccess ? (square.AvgProductivity * 10 / (2 * tile.driveDistance)) : 0;
+                propertyValue += productivityAdd - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
+            }
+        }
+        this.RealEstateValue = propertyValue;
+        return propertyValue;
     }
-    public HashSet<CitySquare> Neighbors
+
+    private HashSet<CitySquareDist> NearbyTiles(int nearbyDist)
     {
-        get { return neighbors; }
+        Dictionary<CitySquare, CitySquareDist> nearbyTiles = new Dictionary<CitySquare, CitySquareDist>();
+        HashSet<CitySquare> tilesToSearch = new HashSet<CitySquare>();
+        foreach (CitySquare tile in this.Neighbors)
+        {
+            nearbyTiles.Add(tile, new CitySquareDist(1, tile, true));
+            if(tile != this)
+            {
+                tilesToSearch.Add(tile);
+            }
+            Routes.Add(tile, new Route(tile));
+        }
+        for (int dist = 2; dist <= nearbyDist && tilesToSearch.Count > 0; dist++)
+        {
+            HashSet<CitySquare> nextTilesToSearch = new HashSet<CitySquare>();
+            foreach (CitySquare tile in tilesToSearch)
+            {
+                foreach (CitySquare neighborTile in tile.Neighbors)
+                {
+                    bool hasRoadAccess = nearbyTiles[tile].roadAccess && tile.HasRoad;
+                    if (neighborTile != this)
+                    {
+                        if (!nearbyTiles.ContainsKey(neighborTile))
+                        {
+                            nearbyTiles.Add(neighborTile, new CitySquareDist(1, neighborTile, hasRoadAccess));
+                            nextTilesToSearch.Add(neighborTile);
+                        }
+                        else if (hasRoadAccess && !nearbyTiles[neighborTile].roadAccess)
+                        {
+                            CitySquareDist neighbor = nearbyTiles[neighborTile];
+                            neighbor.roadAccess = true;
+                            neighbor.driveDistance = dist;
+                            nextTilesToSearch.Add(neighbor.tile);
+                        }
+                        if(hasRoadAccess && !Routes.ContainsKey(neighborTile))
+                        {
+                            addRoute(tile, neighborTile);
+                        }
+                    }
+                }
+            }
+            tilesToSearch = nextTilesToSearch;
+        }
+        return new HashSet<CitySquareDist>(nearbyTiles.Values);
     }
-    public float Height
+
+    private void addRoute(CitySquare tile, CitySquare newRouteTo)
     {
-        get { return height; }
-    }
-    public float Fertility
-    {
-        get { return fertility; }
+        Route route = new Route(Routes[tile].Squares, newRouteTo);
+        Routes.Add(newRouteTo, route);
     }
     public void addNeighbor(CitySquare _neighbor)
     {
         _neighbor.Neighbors.Add(this);
-        this.neighbors.Add(_neighbor);
+        this.Neighbors.Add(_neighbor);
     }
     public CitySquare(
         CityPoint[] _corners,
@@ -92,34 +151,34 @@ public class CitySquare
         CityManager _city
     )
     {
+        guid = Guid.NewGuid();
         city = _city;
         hasRoad = false;
-        neighbors = new HashSet<CitySquare>();
-        offset = _offset;
+        Neighbors = new HashSet<CitySquare>();
+        scale = _scale;
+        offset = _offset * scale;
         drawMode = _drawMode;
         vScale = _vScale;
         vertices = new Vector3[4];
         corners = new Dictionary<Direction, CityPoint>();
-        scale = _scale;
         for (int x = 0; x < 4; x++)
         {
             CityPoint corner = _corners[x];
             corners.Add((Direction)x, corner);
-            fertility += corner.Fertility;
-            height += corner.Height;
+            Fertility += corner.Fertility;
+            Height += corner.Height;
             //vertices[x] = new Vector3((x%3 - 1) * unit, Mathf.Lerp(neighbors.h))
         }
-        height /= 4;
-        fertility /= 4;
-        height *= vScale;
+        Height /= 4;
+        Fertility /= 4;
+        Height *= vScale;
         for (int x = 0; x < 4; x++)
         {
-            Vector3 newOffset = clockwiseVs[x] + offset;
             vertices[x] = new Vector3(
                 0,
-                (corners[(Direction)x].Height) * scale,
+                (corners[(Direction)x].Height * vScale),
                 0
-            ) + (clockwiseVs[x] + offset) * scale;
+            ) + (clockwiseVs[x] * scale + offset);
         }
         realEstateValue = 0f;
     }
@@ -144,22 +203,27 @@ public class CitySquare
     }
     public void AddPropertyCentral(RealEstate ReProperty)
     {
-        if (realEstate != null)
+        if (RealEstate != null)
         {
             return;
         }
-        realEstate = ReProperty;
-        realEstate.price = RealEstateValue;
-        ReProperty.transform.position = offset + new Vector3(0, (height) + .5f);
+        RealEstate = ReProperty;
+        RealEstate.price = RealEstateValue;
+        ReProperty.init(city, this);
+        ReProperty.transform.localPosition = offset + new Vector3(0, (Height) + .5f);
     }
 
     public void RemoveProperty()
     {
-        if(realEstate != null)
+        if(RealEstate != null)
         {
-            city.Properties.Remove(realEstate);
-            GameObject.Destroy(realEstate.gameObject);
-            realEstate = null;
+            city.Properties.Remove(RealEstate);
+            foreach(Human human in RealEstate.Occupants)
+            {
+                GameObject.Destroy(human.gameObject);
+            }
+            GameObject.Destroy(RealEstate.gameObject);
+            RealEstate = null;
         }
     }
 
@@ -170,26 +234,36 @@ public class CitySquare
                EqualityComparer<Texture2D>.Default.Equals(tex, square.tex) &&
                xPos == square.xPos &&
                zPos == square.zPos &&
-               height == square.height &&
-               fertility == square.fertility &&
+               Height == square.Height &&
+               Fertility == square.Fertility &&
                offset.Equals(square.offset) &&
                realEstateValue == square.realEstateValue &&
-               EqualityComparer<HashSet<CitySquare>>.Default.Equals(neighbors, square.neighbors) &&
-               EqualityComparer<RealEstate>.Default.Equals(realEstate, square.realEstate);
+               EqualityComparer<HashSet<CitySquare>>.Default.Equals(Neighbors, square.Neighbors) &&
+               EqualityComparer<RealEstate>.Default.Equals(RealEstate, square.RealEstate);
     }
 
     public override int GetHashCode()
     {
         var hashCode = 976150762;
-        hashCode = hashCode * -1521134295 + EqualityComparer<Texture2D>.Default.GetHashCode(tex);
-        hashCode = hashCode * -1521134295 + xPos.GetHashCode();
-        hashCode = hashCode * -1521134295 + zPos.GetHashCode();
-        hashCode = hashCode * -1521134295 + height.GetHashCode();
-        hashCode = hashCode * -1521134295 + fertility.GetHashCode();
-        hashCode = hashCode * -1521134295 + EqualityComparer<Vector3>.Default.GetHashCode(offset);
-        hashCode = hashCode * -1521134295 + realEstateValue.GetHashCode();
-        hashCode = hashCode * -1521134295 + EqualityComparer<HashSet<CitySquare>>.Default.GetHashCode(neighbors);
-        hashCode = hashCode * -1521134295 + EqualityComparer<RealEstate>.Default.GetHashCode(realEstate);
+        hashCode = hashCode * -1521134295 + guid.GetHashCode();
         return hashCode;
+    }
+}
+
+public class Route {
+    public List<CitySquare> Squares { get; private set; }
+    public HashSet<CitySquare> UsedSquares { get; private set; }
+    public int Length { get { return Squares.Count; } }
+    public Route(CitySquare square)
+    {
+        Squares = new List<CitySquare>();
+        Squares.Add(square);
+        UsedSquares = new HashSet<CitySquare>(Squares);
+    }
+    public Route(List<CitySquare> squares, CitySquare square)
+    {
+        Squares = new List<CitySquare>(squares);
+        squares.Add(square);
+        UsedSquares = new HashSet<CitySquare>(Squares);
     }
 }

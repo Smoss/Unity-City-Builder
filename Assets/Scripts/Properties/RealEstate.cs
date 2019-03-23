@@ -19,6 +19,7 @@ public class RealEstate : MonoBehaviour
     public Color32 highColor;
     public Color32 lowColor;
     public Color32 actualColor;
+    public CitySquare CitySquare { get; private set; }
     public void SetTexture(float min, float max)
     {
         if(meshRenderer != null)
@@ -43,14 +44,14 @@ public class RealEstate : MonoBehaviour
     public List<Human> Occupants {
         get { return occupants; }
     }
-    public void init(CityManager _cityManager)
+    public void init(CityManager _cityManager, CitySquare _CitySquare)
     {
         cityManager = _cityManager;
+        CitySquare = _CitySquare;
     }
     // Start is called before the first frame update
     void Start()
     {
-        occupants = new List<Human>();
         occupations = new Dictionary<Qualification, List<Occupation>>();
         occupants = new List<Human>();
         avgProductivity = 0;
@@ -74,12 +75,23 @@ public class RealEstate : MonoBehaviour
                 avgProductivity = productivity / numOccs;
                 break;
             default:
-                maxOccupants = 5;
+                maxOccupants = 1;
                 break;
         }
         id = Guid.NewGuid();
     }
-
+    
+    public bool addOccupant(Human human)
+    {
+        if(occupants.Count == maxOccupants)
+        {
+            return false;
+        }
+        occupants.Add(human);
+        human.home = this;
+        human.transform.position = this.transform.position;
+        return true;
+    }
     // Update is called once per frame
     void Update()
     {
