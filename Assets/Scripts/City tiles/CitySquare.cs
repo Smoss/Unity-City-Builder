@@ -65,6 +65,7 @@ public class CitySquare
     public HashSet<CitySquare> Neighbors { get; }
     public float Height { get; }
     public float Fertility { get; }
+    public List<Route> Commutes { get; private set; }
     Guid guid;
     public float CalculatePropertyValues(int commuteDist, float pollutionExp)
     {
@@ -110,7 +111,7 @@ public class CitySquare
                     {
                         if (!nearbyTiles.ContainsKey(neighborTile))
                         {
-                            nearbyTiles.Add(neighborTile, new CitySquareDist(1, neighborTile, hasRoadAccess));
+                            nearbyTiles.Add(neighborTile, new CitySquareDist(dist, neighborTile, hasRoadAccess));
                             nextTilesToSearch.Add(neighborTile);
                         }
                         else if (hasRoadAccess && !nearbyTiles[neighborTile].roadAccess)
@@ -129,6 +130,8 @@ public class CitySquare
             }
             tilesToSearch = nextTilesToSearch;
         }
+        Commutes = new List<Route>(Routes.Values);
+        Commutes.Sort();
         return new HashSet<CitySquareDist>(nearbyTiles.Values);
     }
 
@@ -250,7 +253,8 @@ public class CitySquare
     }
 }
 
-public class Route {
+public class Route : IComparable
+{
     public List<CitySquare> Squares { get; private set; }
     public HashSet<CitySquare> UsedSquares { get; private set; }
     public int Length { get { return Squares.Count; } }
@@ -265,5 +269,16 @@ public class Route {
         Squares = new List<CitySquare>(_squares);
         Squares.Add(_square);
         UsedSquares = new HashSet<CitySquare>(Squares);
+    }
+
+    public int CompareTo(object obj)
+    {
+        if (obj == null) return 1;
+
+        Route otherRoute = obj as Route;
+        if (otherRoute != null)
+            return this.Length > otherRoute.Length ? 1 : -1;
+        else
+            throw new ArgumentException("Object is not a Route");
     }
 }

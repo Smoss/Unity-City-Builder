@@ -23,6 +23,8 @@ public class CityManager : ClickAccepter
     private float maxREValue;
     private float minREValue;
     public GameObject Human;
+    HashSet<Occupation> occupations;
+    public List<Human> humans { get; private set; }
     //public Terrain terrain;
     //private TerrainData terrainData;
     public Guid ID
@@ -67,7 +69,7 @@ public class CityManager : ClickAccepter
         }
         //Change this to use ticks
         tick++;
-        if(tick > 1000)
+        if(tick > 250)
         {
             CalculatePropertyValues();
             ScheduleBuilds();
@@ -93,6 +95,50 @@ public class CityManager : ClickAccepter
 
     private void ScheduleBuilds()
     {
+        occupations = new HashSet<Occupation>();
+        foreach(var prop in Properties)
+        {
+            occupations.UnionWith(prop.OccupationsList);
+        }
+        foreach(var occ in occupations)
+        {
+            if (occ.Employee == null)
+            {
+                var options = new List<Route>();
+                foreach (var commute in occ.Location.CitySquare.Commutes)
+                {
+                    var dest = commute.Squares[commute.Squares.Count - 1];
+                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.price < occ.Income * 2)
+                    {
+                        options.Add(commute);
+                    }
+                }
+                if(options.Count > 1)
+                {
+                    float best = float.MaxValue;
+                    int index = 0;
+                    for (int x = 0; x < options.Count; x++)
+                    {
+                        var commute = options[x];
+                        var dest = commute.Squares[commute.Squares.Count - 1];
+                        var reValue = dest.RealEstateValue + commute.Length * 100;
+                        if (reValue < best)
+                        {
+                            index = x;
+                            best = reValue;
+                        }
+                    }
+                    var optimalHome = options[index].Squares[options[index].Squares.Count - 1];
+                    GameObject newHuman = Instantiate(Human);
+                    Human human = newHuman.GetComponent<Human>();
+                    humans.Add(human);
+                    human.init(this, optimalHome.RealEstate, occ.Requirements);
+                    occ.interview(human);
+                    optimalHome.RealEstate.addOccupant(human);
+                }
+
+            }
+        }
         for (int x = 0; x < cityTiles.GetLength(0); x++)
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
@@ -105,10 +151,6 @@ public class CityManager : ClickAccepter
                     Properties.Add(newREVal);
                     newRE.transform.parent = this.transform;
                     tile.AddPropertyCentral(newREVal);
-                    GameObject newHuman = Instantiate(Human);
-                    Human human = newHuman.GetComponent<Human>();
-                    human.init(this, newREVal, Factory.GetComponent<RealEstate>());
-                    newREVal.addOccupant(human);
                 }
                 else if (tile.RealEstateValue < 1000 && tile.RealEstate != null)
                 {
@@ -149,12 +191,19 @@ public class CityManager : ClickAccepter
     }
     private void init()
     {
+        humans = new List<Human>();
+        RealEstate reTest = Factory.GetComponent<RealEstate>();
         tick = 1000;
+        occupations = new HashSet<Occupation>();
+        foreach (var occ in occupations)
+        {
+            occ.Employee = null;
+        }
         if (Properties != null)
         {
             foreach (RealEstate g in Properties)
             {
-                if (g != Factory.GetComponent<RealEstate>())
+                if (g.gameObject != Factory)
                     Destroy(g.gameObject);
             }
         }

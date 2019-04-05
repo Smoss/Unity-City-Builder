@@ -22,7 +22,7 @@ public class Occupation
         get { return employee; }
         set
         {
-            if (employee == null)
+            if (employee == null || value == null)
             {
                 employee = value;
             }
@@ -31,9 +31,10 @@ public class Occupation
     }
     //int performance;
     int pay;
+    public RealEstate Location { get; private set; }
     public bool interview(Human interviewee)
     {
-        if ((int) (interviewee.Qualification) > (int) this.Requirements && this.employee == null)
+        if ((int) (interviewee.Qualification) >= (int) this.Requirements && this.employee == null)
         {
             interviewee.Occupation = this;
             return true;
@@ -44,10 +45,11 @@ public class Occupation
     {
 
     }
-    public Occupation(Qualification _requirements, int _income)
+    public Occupation(Qualification _requirements, int _income, RealEstate _location)
     {
         this.income = _income;
         this.requirements = _requirements;
+        this.Location = _location;
         this.id = Guid.NewGuid();
     }
 }

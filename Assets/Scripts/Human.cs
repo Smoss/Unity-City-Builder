@@ -20,40 +20,45 @@ public class Human: MonoBehaviour
     CitySquare nextLocation;
     int locationPointer;
     Route routeTo;
-    public Vector3 rail;
-    public float dist;
-    public float distTraveled;
+    Vector3 rail;
+    float dist;
+    float distTraveled;
+    public float income;
+    public float homeValue;
     void Update()
     {
-        dist = (this.transform.localPosition - (nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f, 0))).magnitude;
-        if (dist < .01 || distTraveled > rail.magnitude)
+        if(rail != null && nextLocation != null)
         {
-            location = nextLocation;
-            this.transform.localPosition = nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f);
-            distTraveled = 0;
-            if (location == destination.CitySquare)
+            dist = (this.transform.localPosition - (nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f, 0))).magnitude;
+            if (dist < .01 || distTraveled > rail.magnitude)
             {
-                if(destination == workplace)
+                location = nextLocation;
+                this.transform.localPosition = nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f);
+                distTraveled = 0;
+                if (location == destination.CitySquare)
                 {
-                    destination = home;
+                    if (destination == workplace)
+                    {
+                        destination = home;
+                    }
+                    else
+                    {
+                        destination = workplace;
+                    }
+                    locationPointer = 0;
+                    routeTo = nextLocation.Routes[destination.CitySquare];
+                    getNextLocation();
+                    return;
                 }
-                else
-                {
-                    destination = workplace;
-                }
-                locationPointer = 0;
-                routeTo = nextLocation.Routes[destination.CitySquare];
+                locationPointer++;
                 getNextLocation();
-                return;
             }
-            locationPointer++;
-            getNextLocation();
-        }
-        else
-        {
-            Vector3 translation = rail * Time.deltaTime * 5;
-            distTraveled += translation.magnitude;
-            this.transform.Translate(translation);
+            else
+            {
+                Vector3 translation = rail * Time.deltaTime * 5;
+                distTraveled += translation.magnitude;
+                this.transform.Translate(translation);
+            }
         }
     }
     void getNextLocation()
@@ -67,10 +72,27 @@ public class Human: MonoBehaviour
         get { return occupation; }
         set {
             occupation = value;
-            value.Employee = this;
+            if(value != null)
+            {
+                value.Employee = this;
+                workplace = value.Location;
+                this.setDestination();
+                this.income = value.Income;
+            }
         }
     }
-    public void init(/*int _age,*/ CityManager _cityManager, RealEstate _home, RealEstate _workplace)//, Qualification _qualification, int _birthday)
+    void setDestination()
+    {
+        locationPointer = 0;
+        destination = occupation.Location;
+        routeTo = location.Routes[destination.CitySquare];
+        nextLocation = routeTo.Squares[locationPointer];
+        rail = nextLocation.Offset - location.Offset;
+        rail.y = (nextLocation.Height - location.Height);
+        distTraveled = 0;
+    }
+
+    public void init(/*int _age,*/ CityManager _cityManager, RealEstate _home, Qualification _qualification)//, int _birthday)
     {
         //age = _age;
         //qualification = _qualification;
@@ -79,16 +101,19 @@ public class Human: MonoBehaviour
         cityManager = _cityManager;
         this.transform.parent = cityManager.transform;
         home = _home;
-        workplace = _workplace;
-        destination = _workplace;
+        homeValue = _home.price;
         this.transform.position = home.transform.position;
         location = home.CitySquare;
-        locationPointer = 0;
-        routeTo = location.Routes[destination.CitySquare];
-        nextLocation = routeTo.Squares[locationPointer];
-        rail = nextLocation.Offset - location.Offset;
-        rail.y = (nextLocation.Height - location.Height);
-        distTraveled = 0;
+        qualification = _qualification;
+    }
+
+    private void OnDestroy()
+    {
+        cityManager.humans.Remove(this);
+        if(occupation != null)
+        {
+            occupation.Employee = null;
+        }
     }
     //public 
 }

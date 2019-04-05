@@ -762,7 +762,7 @@ PrefabInstance:
     - target: {fileID: 7897354975159709745, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
       propertyPath: commuteDist
-      value: 5
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 7897354975159709745, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
@@ -772,7 +772,7 @@ PrefabInstance:
     - target: {fileID: 7897354975159709745, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
       propertyPath: tick
-      value: 1000
+      value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 7897354975159709745, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
