@@ -55,7 +55,7 @@ public class Human: MonoBehaviour
             }
             else
             {
-                Vector3 translation = rail * Time.deltaTime * 5;
+                Vector3 translation = rail * Time.deltaTime * UnityEngine.Random.value;
                 distTraveled += translation.magnitude;
                 this.transform.Translate(translation);
             }

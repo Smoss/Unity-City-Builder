@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+public enum BuildMode { Road, Factory }
 public class CityManager : ClickAccepter
 {
     public HashSet<RealEstate> Properties;
@@ -24,21 +25,43 @@ public class CityManager : ClickAccepter
     private float minREValue;
     public GameObject Human;
     HashSet<Occupation> occupations;
+    public BuildMode buildMode; 
     public List<Human> humans { get; private set; }
+    public int population;
+    public float costOfLiving;
     //public Terrain terrain;
     //private TerrainData terrainData;
     public Guid ID
     {
         get { return id; }
     }
-    public void BuildRoad(Vector2 vector)
+    public void Build(Vector2 vector)
     {
-        bool addRoad = Input.GetMouseButton(0);
+        bool addHuh  = Input.GetMouseButton(0);
         int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
-        var roads = map[3];
+        var roads = map[(int)DrawMode.RoadMap];
         var road = roads[xLoc, yLoc];
-        roads[xLoc, yLoc] = addRoad ? 1 : 0;
-        cityTiles[xLoc, yLoc].HasRoad = addRoad;
+        switch (this.buildMode)
+        {
+            case BuildMode.Factory:
+                roads[xLoc, yLoc] = 0;
+                var tile = cityTiles[xLoc, yLoc];
+                if (addHuh)
+                {
+                    BuildProperty(this.Factory, tile);
+                }
+                else
+                {
+                    DemolishProperty(tile);
+                }
+                break;
+            case BuildMode.Road:
+                roads[xLoc, yLoc] = addHuh ? 1 : 0;
+                cityTiles[xLoc, yLoc].HasRoad = addHuh;
+                break;
+            default:
+                break;
+        }
         if (drawMode == DrawMode.RoadMap)
         {
             drawTexture();
@@ -54,6 +77,15 @@ public class CityManager : ClickAccepter
     // Update is called once per frame
     void Update()
     {
+        population = humans.Count;  
+        if(Input.GetKeyDown(KeyCode.B))
+        {
+            this.buildMode = BuildMode.Factory;
+        }
+        if(Input.GetKeyDown(KeyCode.R))
+        {
+            this.buildMode = BuildMode.Road;
+        }
         if(Input.GetMouseButton(0) || Input.GetMouseButton(1))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -108,7 +140,7 @@ public class CityManager : ClickAccepter
                 foreach (var commute in occ.Location.CitySquare.Commutes)
                 {
                     var dest = commute.Squares[commute.Squares.Count - 1];
-                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.price < occ.Income * 2)
+                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.price < occ.Income * 5)
                     {
                         options.Add(commute);
                     }
@@ -144,23 +176,34 @@ public class CityManager : ClickAccepter
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
                 CitySquare tile = cityTiles[x, y];
-                if (tile.RealEstateValue > 1000 && tile.RealEstate == null && !tile.HasRoad)
+                if (tile.HousingValue > 100000 && tile.RealEstate == null && !tile.HasRoad && tile.HousingValue > tile.RealEstateValue)
                 {
-                    GameObject newRE = Instantiate(Home);
-                    RealEstate newREVal = newRE.GetComponent<RealEstate>();
-                    Properties.Add(newREVal);
-                    newRE.transform.parent = this.transform;
-                    tile.AddPropertyCentral(newREVal);
+                    BuildProperty(Home, tile);
                 }
-                else if (tile.RealEstateValue < 1000 && tile.RealEstate != null)
+                else if (tile.ProductivityValue > 100000 && tile.RealEstate == null && !tile.HasRoad && tile.ProductivityValue > tile.RealEstateValue)
                 {
-                    if(tile.RealEstate != Factory.GetComponent<RealEstate>())
-                    {
-                        tile.RemoveProperty();
-                    }
+                    BuildProperty(Factory, tile);
                 }
             }
         }
+    }
+
+    private void BuildProperty(GameObject newConstruction, CitySquare tile)
+    {
+        DemolishProperty(tile);
+        if (tile.RealEstate == null)
+        {
+            GameObject newRE = Instantiate(newConstruction);
+            RealEstate newREVal = newRE.GetComponent<RealEstate>();
+            Properties.Add(newREVal);
+            newRE.transform.parent = this.transform;
+            tile.AddPropertyCentral(newREVal);
+        }
+    }
+
+    private void DemolishProperty(CitySquare tile)
+    {
+        tile.RemoveProperty();
     }
 
     private void CalculatePropertyValues()
@@ -172,18 +215,35 @@ public class CityManager : ClickAccepter
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
                 float propertyValue = cityTiles[x, y].CalculatePropertyValues(commuteDist, pollutionExp);
-                propertyValues[x, y] = propertyValue;
-                maxREValue = Mathf.Max(propertyValue, maxREValue);
-                minREValue = Mathf.Min(propertyValue, minREValue);
+                switch (drawMode)
+                {
+                    case DrawMode.HousingValue:
+                        propertyValue = cityTiles[x, y].HousingValue;
+                        propertyValues[x, y] = propertyValue;
+                        maxREValue = Mathf.Max(propertyValue, maxREValue);
+                        minREValue = Mathf.Min(propertyValue, minREValue);
+                        break;
+                    case DrawMode.ProductivityValue:
+                        propertyValue = cityTiles[x, y].ProductivityValue;
+                        propertyValues[x, y] = propertyValue;
+                        maxREValue = Mathf.Max(propertyValue, maxREValue);
+                        minREValue = Mathf.Min(propertyValue, minREValue);
+                        break;
+                    default:
+                        propertyValues[x, y] = propertyValue;
+                        maxREValue = Mathf.Max(propertyValue, maxREValue);
+                        minREValue = Mathf.Min(propertyValue, minREValue);
+                        break;
+                }
             }
         }
-        if(drawMode == DrawMode.PropertyValue)
+        if(drawMode == DrawMode.PropertyValue || drawMode == DrawMode.HousingValue || drawMode == DrawMode.ProductivityValue)
         {
             for (int x = 0; x < cityTiles.GetLength(0); x++)
             {
                 for (int y = 0; y < cityTiles.GetLength(1); y++)
                 {
-                    map[2][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
+                    map[(int)drawMode][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
                 }
             }
             drawTexture();
@@ -192,7 +252,7 @@ public class CityManager : ClickAccepter
     private void init()
     {
         humans = new List<Human>();
-        RealEstate reTest = Factory.GetComponent<RealEstate>();
+        //RealEstate reTest = Factory.GetComponent<RealEstate>();
         tick = 1000;
         occupations = new HashSet<Occupation>();
         foreach (var occ in occupations)
@@ -203,12 +263,12 @@ public class CityManager : ClickAccepter
         {
             foreach (RealEstate g in Properties)
             {
-                if (g.gameObject != Factory)
-                    Destroy(g.gameObject);
+                //if (g.gameObject != Factory)
+                    //Destroy(g.gameObject);
             }
         }
         Properties = new HashSet<RealEstate>();
-        Properties.Add(Factory.GetComponent<RealEstate>());
+        //Properties.Add(Factory.GetComponent<RealEstate>());
     }
     public void GenerateMap()
     {
@@ -223,7 +283,7 @@ public class CityManager : ClickAccepter
 
         cityTiles = MapGenerator.CityTiles;
         propertyValues = new float[MapGenerator.width, MapGenerator.height];
-        MapGenerator.CityTiles[MapGenerator.MaxLoc[0], MapGenerator.MaxLoc[1]].AddPropertyCentral(Factory.GetComponent<RealEstate>());
+        //MapGenerator.CityTiles[MapGenerator.MaxLoc[0], MapGenerator.MaxLoc[1]].AddPropertyCentral(Factory.GetComponent<RealEstate>());
         int width = cityTiles.GetLength(0);
         int height = cityTiles.GetLength(1);
         float[,] tMap = new float[height, width];
@@ -244,12 +304,11 @@ public class CityManager : ClickAccepter
 
     public override void Accept(Vector2 vec)
     {
-        BuildRoad(vec);
+        Build(vec);
     }
 
     public void drawTexture()
     {
-
         Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
     }

@@ -41,12 +41,26 @@ public class CitySquare
             RemoveProperty();
         }
     }
+    public float HousingValue { get; private set; }
+    public float ProductivityValue { get; private set; }
+    public float Housing
+    {
+        get { return RealEstate != null ? RealEstate.Housing : 0; }
+    }
     public float Productivity {
         get { return RealEstate != null ? RealEstate.Productivity : 0; }
     }
     public float AvgProductivity
     {
         get { return RealEstate != null ? RealEstate.AvgProductivity : 0; }
+    }
+    public float EightyProductivity
+    {
+        get { return RealEstate != null ? RealEstate.EightyProductivity : 0; }
+    }
+    public float OccupationCount
+    {
+        get { return RealEstate != null ? RealEstate.OccupationsList.Count : 0; }
     }
     public float Pollution {
         get { return RealEstate != null ? RealEstate.pollution : 0; }
@@ -71,16 +85,29 @@ public class CitySquare
     {
         Routes = new Dictionary<CitySquare, Route>();
         float propertyValue = 0;
+        this.HousingValue = 0;
+        this.ProductivityValue = 0;
         if (!this.HasRoad)
         {
             HashSet<CitySquareDist> nearbyTiles = this.NearbyTiles(commuteDist);
             propertyValue = -Mathf.Pow(this.Pollution, pollutionExp);
+            int productiveCount = 0;
             foreach (CitySquareDist tile in nearbyTiles)
             {
                 CitySquare square = tile.tile;
-                float productivityAdd = tile.roadAccess ? (square.AvgProductivity * 10 / (2 * tile.driveDistance)) : 0;
+                float multiplier = 5 / tile.driveDistance;
+                //float avgProductivityAdd = tile.roadAccess ? (square.AvgProductivity * multiplier) : 0;
+                // This is complicated but boils down to the 80th percentile times number of works times .1 divided by distance
+                float productivityAdd = tile.roadAccess ? (square.EightyProductivity * square.OccupationCount * multiplier * .02f) : 0;
+                float housingAdd = tile.roadAccess && !tile.tile.hasRoad ? (square.Housing * multiplier) : 0;
+                productiveCount += tile.roadAccess ? 1 : 0;
                 propertyValue += productivityAdd - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
+                float accessValue = tile.roadAccess ? 200 / tile.driveDistance : 0;
+                this.HousingValue += productivityAdd + accessValue;
+                this.HousingValue -= housingAdd;
+                this.ProductivityValue += housingAdd + accessValue * 2;
             }
+            propertyValue /= Mathf.Sqrt(productiveCount);
         }
         this.RealEstateValue = propertyValue;
         return propertyValue;
@@ -154,6 +181,8 @@ public class CitySquare
         CityManager _city
     )
     {
+        HousingValue = 0;
+        ProductivityValue = 0;
         guid = Guid.NewGuid();
         city = _city;
         hasRoad = false;
