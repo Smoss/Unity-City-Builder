@@ -26,10 +26,11 @@ public class RealEstate : MonoBehaviour
             meshRenderer.material.mainTexture = TextureGenerator.TextureFromColor(actualColor);
         }
     }
-    public float Productivity { get; private set; }
-    public float AvgProductivity { get; private set; }
-    public float EightyProductivity { get; private set; }
+    public float MaxProductivity { get; private set; }
+    public float EightyIncome { get; private set; }
     public float Housing { get; private set; }
+    public float RealProductivity { get; private set; }
+    private float payroll;
     List<Human> occupants;
     public bool OpenUnits { get { return occupants.Count < maxOccupants; } }
     public Dictionary<Qualification, List<Occupation>> Occupations { get; private set; }
@@ -41,13 +42,25 @@ public class RealEstate : MonoBehaviour
         cityManager = _cityManager;
         CitySquare = _CitySquare;
     }
+    public void updateProductivity(Occupation occupation) {
+        if (occupation.Employee != null)
+        {
+            this.RealProductivity -= occupation.Productivity;
+            payroll -= occupation.Income;
+        } 
+        else
+        {
+            this.RealProductivity += occupation.Productivity;
+            payroll += occupation.Income;
+        }
+    }
     // Start is called before the first frame update
     void Start()
     {
         Occupations = new Dictionary<Qualification, List<Occupation>>();
         OccupationsList = new List<Occupation>();
-        AvgProductivity = 0;
-        Productivity = 0;
+        RealProductivity = 0;
+        MaxProductivity = 0;
         occupants = new List<Human>();
         switch (type) {
             case PropertyType.Factory:
@@ -56,34 +69,32 @@ public class RealEstate : MonoBehaviour
                 Occupations.Add(Qualification.Bachelors, new List<Occupation>());
                 for (int x = 0; x < 24; x++)
                 {
-                    var newOcc = new Occupation(Qualification.NoHS, 40000, this);
+                    var newOcc = new Occupation(Qualification.NoHS, 40000, this, 80000);
                     Occupations[Qualification.NoHS].Add(newOcc);
                     OccupationsList.Add(newOcc);
-                    Productivity += 40000;
+                    MaxProductivity += 80000;
                 }
-                for (int x = 0; x < 14; x++)
+                /*for (int x = 0; x < 14; x++)
                 {
-                    var newOcc = (new Occupation(Qualification.HS, 60000, this));
+                    var newOcc = (new Occupation(Qualification.HS, 60000, this, 90000));
                     Occupations[Qualification.HS].Add(newOcc);
                     OccupationsList.Add(newOcc);
-                    Productivity += 60000;
+                    Productivity += 90000;
                 }
                 for (int x = 0; x < 4; x++)
                 {
-                    var newOcc = (new Occupation(Qualification.Bachelors, 100000, this));
+                    var newOcc = (new Occupation(Qualification.Bachelors, 100000, this, 120000));
                     Occupations[Qualification.Bachelors].Add(newOcc);
                     OccupationsList.Add(newOcc);
-                    Productivity += 100000;
-                }
+                    Productivity += 120000;
+                }*/
                 maxOccupants = 0;
                 int numOccupations = OccupationsList.Count;
-                AvgProductivity = Productivity / numOccupations;
-                EightyProductivity = OccupationsList[(int)(numOccupations * .8f)].Income;
+                EightyIncome = OccupationsList[(int)(numOccupations * .8f)].Income;
                 Housing = 0;
                 break;
             default:
-                Productivity = 0;
-                AvgProductivity = 0;
+                MaxProductivity = 0;
                 Housing = cityManager.costOfLiving * maxOccupants;
                 break;
         }

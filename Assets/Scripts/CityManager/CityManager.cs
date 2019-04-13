@@ -13,7 +13,6 @@ public class CityManager : ClickAccepter
     public MapGenerator MapGenerator;
     CitySquare[,] cityTiles;
     float[,] propertyValues;
-    readonly Guid id;
     public DrawMode drawMode;
     Color32[] colorSet;
     List<float[,]> map;
@@ -29,12 +28,11 @@ public class CityManager : ClickAccepter
     public List<Human> humans { get; private set; }
     public int population;
     public float costOfLiving;
+    const float FactoryMultiplier = 1;
+    const float HousingMultiplier = 1;
+    const float HousingIncomeMultiplier = 5;
     //public Terrain terrain;
     //private TerrainData terrainData;
-    public Guid ID
-    {
-        get { return id; }
-    }
     public void Build(Vector2 vector)
     {
         bool addHuh  = Input.GetMouseButton(0);
@@ -140,7 +138,7 @@ public class CityManager : ClickAccepter
                 foreach (var commute in occ.Location.CitySquare.Commutes)
                 {
                     var dest = commute.Squares[commute.Squares.Count - 1];
-                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.price < occ.Income * 5)
+                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.price < occ.Income * HousingIncomeMultiplier)
                     {
                         options.Add(commute);
                     }
@@ -176,11 +174,16 @@ public class CityManager : ClickAccepter
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
                 CitySquare tile = cityTiles[x, y];
-                if (tile.HousingValue > 100000 && tile.RealEstate == null && !tile.HasRoad && tile.HousingValue > tile.RealEstateValue)
+                if (
+                    tile.HousingValue > Home.GetComponent<RealEstate>().maxOccupants * costOfLiving * HousingMultiplier &&
+                    tile.RealEstate == null && 
+                    !tile.HasRoad && 
+                    tile.HousingValue > tile.RealEstateValue
+                )
                 {
                     BuildProperty(Home, tile);
                 }
-                else if (tile.ProductivityValue > 100000 && tile.RealEstate == null && !tile.HasRoad && tile.ProductivityValue > tile.RealEstateValue)
+                else if (tile.ProductivityValue > 300000 * FactoryMultiplier && tile.RealEstate == null && !tile.HasRoad && tile.ProductivityValue > tile.RealEstateValue)
                 {
                     BuildProperty(Factory, tile);
                 }
@@ -220,14 +223,14 @@ public class CityManager : ClickAccepter
                     case DrawMode.HousingValue:
                         propertyValue = cityTiles[x, y].HousingValue;
                         propertyValues[x, y] = propertyValue;
-                        maxREValue = Mathf.Max(propertyValue, maxREValue);
-                        minREValue = Mathf.Min(propertyValue, minREValue);
+                        maxREValue = 240000;
+                        minREValue = 0;
                         break;
                     case DrawMode.ProductivityValue:
                         propertyValue = cityTiles[x, y].ProductivityValue;
                         propertyValues[x, y] = propertyValue;
-                        maxREValue = Mathf.Max(propertyValue, maxREValue);
-                        minREValue = Mathf.Min(propertyValue, minREValue);
+                        maxREValue = 360000;
+                        minREValue = 0;
                         break;
                     default:
                         propertyValues[x, y] = propertyValue;

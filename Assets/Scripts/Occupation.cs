@@ -14,6 +14,7 @@ public class Occupation
     }
     Human employee;
     float income;
+    public float Productivity { get; private set; }
     public float Income
     {
         get { return income; }
@@ -25,6 +26,7 @@ public class Occupation
             if (employee == null || value == null)
             {
                 employee = value;
+                Location.updateProductivity(this);
             }
             //performance = 3;
         }
@@ -43,13 +45,13 @@ public class Occupation
     }
     public void fire()
     {
-
     }
-    public Occupation(Qualification _requirements, int _income, RealEstate _location)
+    public Occupation(Qualification _requirements, float _income, RealEstate _location, float _productivity)
     {
         this.income = _income;
         this.requirements = _requirements;
         this.Location = _location;
         this.id = Guid.NewGuid();
+        this.Productivity = _productivity;
     }
 }

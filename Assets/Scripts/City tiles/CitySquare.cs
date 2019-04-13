@@ -24,7 +24,6 @@ public class CitySquare
     float scale;
     float vScale;
     DrawMode drawMode;
-    Texture2D tex;
     public int xPos;
     public int zPos;
     Vector3 offset;
@@ -48,15 +47,11 @@ public class CitySquare
         get { return RealEstate != null ? RealEstate.Housing : 0; }
     }
     public float Productivity {
-        get { return RealEstate != null ? RealEstate.Productivity : 0; }
+        get { return RealEstate != null ? RealEstate.MaxProductivity : 0; }
     }
-    public float AvgProductivity
+    public float EightyIncome
     {
-        get { return RealEstate != null ? RealEstate.AvgProductivity : 0; }
-    }
-    public float EightyProductivity
-    {
-        get { return RealEstate != null ? RealEstate.EightyProductivity : 0; }
+        get { return RealEstate != null ? RealEstate.EightyIncome : 0; }
     }
     public float OccupationCount
     {
@@ -96,10 +91,9 @@ public class CitySquare
             {
                 CitySquare square = tile.tile;
                 float multiplier = 5 / tile.driveDistance;
-                //float avgProductivityAdd = tile.roadAccess ? (square.AvgProductivity * multiplier) : 0;
                 // This is complicated but boils down to the 80th percentile times number of works times .1 divided by distance
-                float productivityAdd = tile.roadAccess ? (square.EightyProductivity * square.OccupationCount * multiplier * .02f) : 0;
-                float housingAdd = tile.roadAccess && !tile.tile.hasRoad ? (square.Housing * multiplier) : 0;
+                float productivityAdd = tile.roadAccess ? (square.EightyIncome * square.OccupationCount * .1f / tile.driveDistance) : 0;
+                float housingAdd = tile.roadAccess && !tile.tile.hasRoad ? (square.Housing / tile.driveDistance) : 0;
                 productiveCount += tile.roadAccess ? 1 : 0;
                 propertyValue += productivityAdd - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
                 float accessValue = tile.roadAccess ? 200 / tile.driveDistance : 0;
@@ -263,7 +257,6 @@ public class CitySquare
     {
         var square = obj as CitySquare;
         return square != null &&
-               EqualityComparer<Texture2D>.Default.Equals(tex, square.tex) &&
                xPos == square.xPos &&
                zPos == square.zPos &&
                Height == square.Height &&
