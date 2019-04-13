@@ -60,6 +60,10 @@ public class CitySquare
     public float Pollution {
         get { return RealEstate != null ? RealEstate.pollution : 0; }
     }
+    public int AvailableJobs
+    {
+        get { return RealEstate != null ? RealEstate.AvailableJobs : 0; }
+    }
     public float RealEstateValue {
         get { return realEstateValue; }
         set {
@@ -92,13 +96,14 @@ public class CitySquare
                 CitySquare square = tile.tile;
                 float multiplier = 5 / tile.driveDistance;
                 // This is complicated but boils down to the 80th percentile times number of works times .1 divided by distance
-                float productivityAdd = tile.roadAccess ? (square.EightyIncome * square.OccupationCount * .1f / tile.driveDistance) : 0;
+                float productivityAdd = tile.roadAccess ? (square.EightyIncome * square.AvailableJobs * .1f) : 0;
                 float housingAdd = tile.roadAccess && !tile.tile.hasRoad ? (square.Housing / tile.driveDistance) : 0;
                 productiveCount += tile.roadAccess ? 1 : 0;
-                propertyValue += productivityAdd - Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp) + 1;
+                float pollution = Mathf.Pow(square.Pollution / (tile.distance + 1), pollutionExp);
+                propertyValue += productivityAdd - pollution + 1;
                 float accessValue = tile.roadAccess ? 200 / tile.driveDistance : 0;
                 this.HousingValue += productivityAdd + accessValue;
-                this.HousingValue -= housingAdd;
+                this.HousingValue -= housingAdd - pollution;
                 this.ProductivityValue += housingAdd + accessValue * 2;
             }
             propertyValue /= Mathf.Sqrt(productiveCount);
@@ -111,6 +116,7 @@ public class CitySquare
     {
         Dictionary<CitySquare, CitySquareDist> nearbyTiles = new Dictionary<CitySquare, CitySquareDist>();
         HashSet<CitySquare> tilesToSearch = new HashSet<CitySquare>();
+        Routes.Add(this, new Route(this));
         foreach (CitySquare tile in this.Neighbors)
         {
             nearbyTiles.Add(tile, new CitySquareDist(1, tile, true));
@@ -227,7 +233,7 @@ public class CitySquare
     {
 
     }
-    public void AddPropertyCentral(RealEstate ReProperty)
+    public void AddPropertyCentral(RealEstate ReProperty, EconomicUnit owner)
     {
         if (RealEstate != null)
         {
@@ -235,7 +241,7 @@ public class CitySquare
         }
         RealEstate = ReProperty;
         RealEstate.price = RealEstateValue;
-        ReProperty.init(city, this);
+        ReProperty.init(city, this, owner);
         ReProperty.transform.localPosition = offset + new Vector3(0, (Height) + .5f);
     }
 
@@ -280,6 +286,11 @@ public class Route : IComparable
     public List<CitySquare> Squares { get; private set; }
     public HashSet<CitySquare> UsedSquares { get; private set; }
     public int Length { get { return Squares.Count; } }
+    public Route()
+    {
+        Squares = new List<CitySquare>();
+        UsedSquares = new HashSet<CitySquare>(Squares);
+    }
     public Route(CitySquare square)
     {
         Squares = new List<CitySquare>();

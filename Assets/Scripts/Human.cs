@@ -25,9 +25,15 @@ public class Human: MonoBehaviour
     float distTraveled;
     public float income;
     public float homeValue;
+    public EconomicUnit Actor;
     void Update()
     {
-        if(rail != null && nextLocation != null)
+        if(
+            rail != null &&
+            nextLocation != null &&
+            location != destination.CitySquare &&
+            workplace != home
+        )
         {
             dist = (this.transform.localPosition - (nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f, 0))).magnitude;
             if (dist < .01 || distTraveled > rail.magnitude)
@@ -71,14 +77,21 @@ public class Human: MonoBehaviour
     {
         get { return occupation; }
         set {
-            occupation = value;
             if(value != null)
             {
                 value.Employee = this;
                 workplace = value.Location;
                 this.setDestination();
                 this.income = value.Income;
+                this.Actor.Income += value.Income;
             }
+            else
+            {
+                workplace = home;
+                this.income = 0;
+                this.Actor.Income -= occupation.Income;
+            }
+            occupation = value;
         }
     }
     void setDestination()
@@ -92,11 +105,12 @@ public class Human: MonoBehaviour
         distTraveled = 0;
     }
 
-    public void init(/*int _age,*/ CityManager _cityManager, RealEstate _home, Qualification _qualification)//, int _birthday)
+    public void init(/*int _age,*/ CityManager _cityManager, RealEstate _home, Qualification _qualification, EconomicUnit Economy)//, int _birthday)
     {
         //age = _age;
         //qualification = _qualification;
         //birthday = _birthday;
+        Actor = new EconomicUnit(Economy);
         id = Guid.NewGuid();
         cityManager = _cityManager;
         this.transform.parent = cityManager.transform;

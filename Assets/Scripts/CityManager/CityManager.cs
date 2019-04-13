@@ -31,6 +31,11 @@ public class CityManager : ClickAccepter
     const float FactoryMultiplier = 1;
     const float HousingMultiplier = 1;
     const float HousingIncomeMultiplier = 5;
+    public float EconomicOutput;
+    public float EconomicSurplus;
+    public EconomicUnit Economy;
+    public EconomicUnit Government;
+    public bool paused;
     //public Terrain terrain;
     //private TerrainData terrainData;
     public void Build(Vector2 vector)
@@ -46,7 +51,7 @@ public class CityManager : ClickAccepter
                 var tile = cityTiles[xLoc, yLoc];
                 if (addHuh)
                 {
-                    BuildProperty(this.Factory, tile);
+                    BuildProperty(this.Factory, tile, this.Government);
                 }
                 else
                 {
@@ -75,7 +80,11 @@ public class CityManager : ClickAccepter
     // Update is called once per frame
     void Update()
     {
-        population = humans.Count;  
+        population = humans.Count;
+        if(Input.GetKeyDown(KeyCode.P))
+        {
+            this.paused = !this.paused;
+        }
         if(Input.GetKeyDown(KeyCode.B))
         {
             this.buildMode = BuildMode.Factory;
@@ -98,15 +107,26 @@ public class CityManager : ClickAccepter
             }
         }
         //Change this to use ticks
-        tick++;
+        if (!this.paused)
+        {
+            tick++;
+        }
         if(tick > 250)
         {
             CalculatePropertyValues();
             ScheduleBuilds();
             SetColors();
+            CalculateEconomy();
             tick = 0;
         }
     }
+    
+    private void CalculateEconomy()
+    {
+        this.EconomicOutput = Economy.Income;
+        this.EconomicSurplus = EconomicOutput - Economy.Expenses;
+    }
+
     private void OnValidate()
     {
         if (commuteDist <= 0)
@@ -162,7 +182,7 @@ public class CityManager : ClickAccepter
                     GameObject newHuman = Instantiate(Human);
                     Human human = newHuman.GetComponent<Human>();
                     humans.Add(human);
-                    human.init(this, optimalHome.RealEstate, occ.Requirements);
+                    human.init(this, optimalHome.RealEstate, occ.Requirements, this.Economy);
                     occ.interview(human);
                     optimalHome.RealEstate.addOccupant(human);
                 }
@@ -181,17 +201,21 @@ public class CityManager : ClickAccepter
                     tile.HousingValue > tile.RealEstateValue
                 )
                 {
-                    BuildProperty(Home, tile);
+                    BuildProperty(Home, tile, this.Economy);
                 }
-                else if (tile.ProductivityValue > 300000 * FactoryMultiplier && tile.RealEstate == null && !tile.HasRoad && tile.ProductivityValue > tile.RealEstateValue)
+                else if (tile.ProductivityValue > 200000 * FactoryMultiplier &&
+                    tile.RealEstate == null &&
+                    !tile.HasRoad &&
+                    tile.ProductivityValue > tile.RealEstateValue
+                )
                 {
-                    BuildProperty(Factory, tile);
+                    BuildProperty(Factory, tile, this.Economy);
                 }
             }
         }
     }
 
-    private void BuildProperty(GameObject newConstruction, CitySquare tile)
+    private void BuildProperty(GameObject newConstruction, CitySquare tile, EconomicUnit owner)
     {
         DemolishProperty(tile);
         if (tile.RealEstate == null)
@@ -200,7 +224,7 @@ public class CityManager : ClickAccepter
             RealEstate newREVal = newRE.GetComponent<RealEstate>();
             Properties.Add(newREVal);
             newRE.transform.parent = this.transform;
-            tile.AddPropertyCentral(newREVal);
+            tile.AddPropertyCentral(newREVal, owner);
         }
     }
 
@@ -255,6 +279,8 @@ public class CityManager : ClickAccepter
     private void init()
     {
         humans = new List<Human>();
+        Economy = new EconomicUnit(null);
+        Government = new EconomicUnit(Economy);
         //RealEstate reTest = Factory.GetComponent<RealEstate>();
         tick = 1000;
         occupations = new HashSet<Occupation>();

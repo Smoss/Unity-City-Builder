@@ -8,7 +8,7 @@ public class RealEstate : MonoBehaviour
 {
     public Guid id;
     public PropertyType type;
-    CityManager cityManager;
+    CityManager CityManager;
     public int maxOccupants;
     public float price;
     public float pollution;
@@ -37,23 +37,30 @@ public class RealEstate : MonoBehaviour
     public List<Human> Occupants {
         get { return occupants; }
     }
-    public void init(CityManager _cityManager, CitySquare _CitySquare)
+    public int AvailableJobs { get; private set; }
+    public EconomicUnit Owner { get; private set; }
+
+    public void init(CityManager _cityManager, CitySquare _CitySquare, EconomicUnit _owner)
     {
-        cityManager = _cityManager;
+        CityManager = _cityManager;
         CitySquare = _CitySquare;
+        Owner = _owner;
     }
     public void updateProductivity(Occupation occupation) {
         if (occupation.Employee != null)
         {
-            this.RealProductivity -= occupation.Productivity;
-            payroll -= occupation.Income;
+            this.RealProductivity += occupation.Productivity;
+            payroll += occupation.Income;
+            AvailableJobs--;
         } 
         else
         {
-            this.RealProductivity += occupation.Productivity;
-            payroll += occupation.Income;
+            this.RealProductivity -= occupation.Productivity;
+            payroll -= occupation.Income;
+            AvailableJobs++;
         }
     }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -73,6 +80,7 @@ public class RealEstate : MonoBehaviour
                     Occupations[Qualification.NoHS].Add(newOcc);
                     OccupationsList.Add(newOcc);
                     MaxProductivity += 80000;
+                    AvailableJobs++;
                 }
                 /*for (int x = 0; x < 14; x++)
                 {
@@ -95,7 +103,7 @@ public class RealEstate : MonoBehaviour
                 break;
             default:
                 MaxProductivity = 0;
-                Housing = cityManager.costOfLiving * maxOccupants;
+                Housing = CityManager.costOfLiving * maxOccupants;
                 break;
         }
         id = Guid.NewGuid();
