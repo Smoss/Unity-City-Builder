@@ -97,7 +97,7 @@ public class Human: MonoBehaviour
     void setDestination()
     {
         locationPointer = 0;
-        destination = occupation.Location;
+        destination = workplace;
         routeTo = location.Routes[destination.CitySquare];
         nextLocation = routeTo.Squares[locationPointer];
         rail = nextLocation.Offset - location.Offset;

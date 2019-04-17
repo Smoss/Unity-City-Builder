@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
-
-public enum BuildMode { Road, Factory }
+public enum BuildMode { Road, Factory, Select }
 public class CityManager : ClickAccepter
 {
     public HashSet<RealEstate> Properties;
@@ -24,7 +24,7 @@ public class CityManager : ClickAccepter
     private float minREValue;
     public GameObject Human;
     HashSet<Occupation> occupations;
-    public BuildMode buildMode; 
+    public BuildMode clickMode; 
     public List<Human> humans { get; private set; }
     public int population;
     public float costOfLiving;
@@ -33,18 +33,23 @@ public class CityManager : ClickAccepter
     const float HousingIncomeMultiplier = 5;
     public float EconomicOutput;
     public float EconomicSurplus;
+    public float TaxRevenue;
     public EconomicUnit Economy;
     public EconomicUnit Government;
+    private RealEstate SelectedRealEstate;
+    public Text selectedBuildingType;
+    public Text selectedBuildingValue;
     public bool paused;
     //public Terrain terrain;
     //private TerrainData terrainData;
+    public float taxValue;
     public void Build(Vector2 vector)
     {
         bool addHuh  = Input.GetMouseButton(0);
         int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
         var roads = map[(int)DrawMode.RoadMap];
         var road = roads[xLoc, yLoc];
-        switch (this.buildMode)
+        switch (this.clickMode)
         {
             case BuildMode.Factory:
                 roads[xLoc, yLoc] = 0;
@@ -87,13 +92,17 @@ public class CityManager : ClickAccepter
         }
         if(Input.GetKeyDown(KeyCode.B))
         {
-            this.buildMode = BuildMode.Factory;
+            this.clickMode = BuildMode.Factory;
         }
         if(Input.GetKeyDown(KeyCode.R))
         {
-            this.buildMode = BuildMode.Road;
+            this.clickMode = BuildMode.Road;
         }
-        if(Input.GetMouseButton(0) || Input.GetMouseButton(1))
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            this.clickMode = BuildMode.Select;
+        }
+        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
@@ -104,8 +113,14 @@ public class CityManager : ClickAccepter
                 {
                     accepter.Accept(hit.textureCoord);
                 }
+                
+            }
+            else if (clickMode == BuildMode.Select)
+            {
+                setSelectedBuilding(null);
             }
         }
+        updateUI();
         //Change this to use ticks
         if (!this.paused)
         {
@@ -120,11 +135,38 @@ public class CityManager : ClickAccepter
             tick = 0;
         }
     }
+
+    private void updateUI()
+    {
+        string buildingType = "";
+        string price = "";
+        if (SelectedRealEstate != null)
+        {
+            switch (SelectedRealEstate.type)
+            {
+                case PropertyType.Home:
+                    buildingType = "Home";
+                    break;
+                default:
+                    buildingType = "Factory";
+                    break;
+            }
+            price = SelectedRealEstate.price.ToString();
+        }
+        this.selectedBuildingType.text = buildingType;
+        this.selectedBuildingValue.text = price;
+    }
     
+    public void setSelectedBuilding(RealEstate property)
+    {
+        this.SelectedRealEstate = property;
+    }
+
     private void CalculateEconomy()
     {
         this.EconomicOutput = Economy.Income;
         this.EconomicSurplus = EconomicOutput - Economy.Expenses;
+        this.TaxRevenue = Government.Income;
     }
 
     private void OnValidate()
@@ -149,6 +191,7 @@ public class CityManager : ClickAccepter
         foreach(var prop in Properties)
         {
             occupations.UnionWith(prop.OccupationsList);
+            prop.CalculateTaxes();
         }
         foreach(var occ in occupations)
         {

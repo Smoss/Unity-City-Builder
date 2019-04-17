@@ -16,7 +16,10 @@ public class EconomicUnit
                 Parent.Income -= this.income;
             }
             this.income = value;
-            Parent.Income += value;
+            if (Parent != null)
+            {
+                Parent.Income += value;
+            }
         }
     }
     private float expenses;
@@ -33,7 +36,10 @@ public class EconomicUnit
                 Parent.Expenses -= this.expenses;
             }
             this.expenses = value;
-            Parent.Expenses += value;
+            if (Parent != null)
+            {
+                Parent.Expenses += value;
+            }
         }
     }
     public HashSet<EconomicUnit> Children { get; private set; }

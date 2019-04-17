@@ -4,7 +4,7 @@ using UnityEngine;
 using System;
 
 public enum PropertyType { Factory, Home}
-public class RealEstate : MonoBehaviour
+public class RealEstate : ClickAccepter
 {
     public Guid id;
     public PropertyType type;
@@ -31,6 +31,7 @@ public class RealEstate : MonoBehaviour
     public float Housing { get; private set; }
     public float RealProductivity { get; private set; }
     private float payroll;
+    private float oldTaxes;
     List<Human> occupants;
     public bool OpenUnits { get { return occupants.Count < maxOccupants; } }
     public Dictionary<Qualification, List<Occupation>> Occupations { get; private set; }
@@ -49,13 +50,17 @@ public class RealEstate : MonoBehaviour
     public void updateProductivity(Occupation occupation) {
         if (occupation.Employee != null)
         {
-            this.RealProductivity += occupation.Productivity;
+            RealProductivity += occupation.Productivity;
+            Owner.Income += occupation.Productivity;
+            Owner.Expenses += occupation.Income;
             payroll += occupation.Income;
             AvailableJobs--;
         } 
         else
         {
-            this.RealProductivity -= occupation.Productivity;
+            RealProductivity -= occupation.Productivity;
+            Owner.Income -= occupation.Productivity;
+            Owner.Expenses -= occupation.Income;
             payroll -= occupation.Income;
             AvailableJobs++;
         }
@@ -69,6 +74,7 @@ public class RealEstate : MonoBehaviour
         RealProductivity = 0;
         MaxProductivity = 0;
         occupants = new List<Human>();
+        oldTaxes = 0;
         switch (type) {
             case PropertyType.Factory:
                 Occupations.Add(Qualification.NoHS, new List<Occupation>());
@@ -121,12 +127,28 @@ public class RealEstate : MonoBehaviour
         }
         occupants.Add(human);
         human.home = this;
+        Owner.Income += price / 10;
+        human.Actor.Expenses += price / 10;
         human.transform.position = this.transform.position;
         return true;
+    }
+    public void CalculateTaxes()
+    {
+        this.Owner.Expenses -= oldTaxes;
+        this.CityManager.Government.Income -= oldTaxes;
+        float newTaxes = this.price * CityManager.taxValue;
+        this.Owner.Expenses += newTaxes;
+        this.CityManager.Government.Income += oldTaxes;
+        oldTaxes = newTaxes;
     }
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    public override void Accept(Vector2 vec)
+    {
+        CityManager.setSelectedBuilding(this);
     }
 }
