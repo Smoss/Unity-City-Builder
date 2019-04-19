@@ -53,6 +53,10 @@ public class EconomicUnit
             return Income * finalMultiplier;
         }
     }
+    public float NetIncome
+    {
+        get { return EffectiveIncome - Expenses; }
+    }
     public Dictionary<string, float> IncomeMulitpliers { get; private set; }
     public HashSet<EconomicUnit> Children { get; private set; }
     public HashSet<RealEstate> ReProperties { get; private set; }

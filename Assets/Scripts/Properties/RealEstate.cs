@@ -89,7 +89,7 @@ public class RealEstate : ClickAccepter
         if( buildingProductivity != null)
         {
             var electricityMultiplier = ElectricityRequirement == 0 ? 1 : Mathf.Pow(ElectricityProvided / (float)ElectricityRequirement, 2);
-            buildingProductivity.text = ((Owner.Income - Owner.Expenses) * electricityMultiplier).ToString();
+            buildingProductivity.text = Owner.NetIncome.ToString();
         }
     }
 
@@ -102,7 +102,7 @@ public class RealEstate : ClickAccepter
         MaxProductivity = 0;
         occupants = new List<Human>();
         oldTaxes = 0;
-        buildingProductivity.text = (Owner.Income - Owner.Expenses).ToString();
+        buildingProductivity.text = Owner.NetIncome.ToString();
         switch (type) {
             case PropertyType.Factory:
                 {
@@ -175,7 +175,7 @@ public class RealEstate : ClickAccepter
         Owner.Income += Price / 10;
         human.Actor.Expenses += Price / 10;
         human.transform.position = this.transform.position;
-        buildingProductivity.text = (Owner.Income - Owner.Expenses).ToString();
+        buildingProductivity.text = Owner.NetIncome.ToString();
         return true;
     }
     public void CalculateTaxes()
