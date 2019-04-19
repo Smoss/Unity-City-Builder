@@ -42,6 +42,18 @@ public class EconomicUnit
             }
         }
     }
+    public float EffectiveIncome {
+        get
+        {
+            float finalMultiplier = 1;
+            foreach (float multi in IncomeMulitpliers.Values)
+            {
+                finalMultiplier *= multi;
+            }
+            return Income * finalMultiplier;
+        }
+    }
+    public Dictionary<string, float> IncomeMulitpliers { get; private set; }
     public HashSet<EconomicUnit> Children { get; private set; }
     public HashSet<RealEstate> ReProperties { get; private set; }
     public float Balance { get; set; }
@@ -49,6 +61,7 @@ public class EconomicUnit
     public EconomicUnit Parent { get; private set; }
     public EconomicUnit(EconomicUnit _parent)
     {
+        IncomeMulitpliers = new Dictionary<string, float>();
         this.Income = 0;
         this.Expenses = 0;
         this.Children = new HashSet<EconomicUnit>();

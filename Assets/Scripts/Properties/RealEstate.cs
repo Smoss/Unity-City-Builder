@@ -1,16 +1,29 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 
-public enum PropertyType { Factory, Home}
+public enum PropertyType { Factory, Home, PowerPlant}
 public class RealEstate : ClickAccepter
 {
     public Guid id;
     public PropertyType type;
     CityManager CityManager;
     public int maxOccupants;
-    public float price;
+    private float price;
+    public float Price
+    {
+        get
+        {
+            return price;
+        }
+        set
+        {
+            price = value;
+            buildingValue.text = value.ToString();
+        }
+    }
     public float pollution;
     public MeshRenderer meshRenderer;
     public Color32 highColor;
@@ -18,18 +31,22 @@ public class RealEstate : ClickAccepter
     public Color32 actualColor;
     public CitySquare CitySquare { get; private set; }
     public List<Occupation> OccupationsList { get; private set; }
+    public Text buildingValue;
+    public Text buildingProductivity;
+    public RectTransform canvasTransform;
+    private bool displaying;
     public void SetTexture(float min, float max)
     {
         if(meshRenderer != null)
         {
-            actualColor = Color32.Lerp(lowColor, highColor, Mathf.InverseLerp(min, max, price));
+            actualColor = Color32.Lerp(lowColor, highColor, Mathf.InverseLerp(min, max, Price));
             meshRenderer.material.mainTexture = TextureGenerator.TextureFromColor(actualColor);
         }
     }
     public float MaxProductivity { get; private set; }
     public float EightyIncome { get; private set; }
     public float Housing { get; private set; }
-    public float RealProductivity { get; private set; }
+    public float TheoreticalProductivity { get; private set; }
     private float payroll;
     private float oldTaxes;
     List<Human> occupants;
@@ -40,6 +57,11 @@ public class RealEstate : ClickAccepter
     }
     public int AvailableJobs { get; private set; }
     public EconomicUnit Owner { get; private set; }
+    public float ElectricityRequirement;
+    public float MaxElectricityGeneration;
+    //public float ElectricityGeneration { get { return } }
+    public float ElectricityProvided;
+    public float EffectiveProductivity { get; private set; }
 
     public void init(CityManager _cityManager, CitySquare _CitySquare, EconomicUnit _owner)
     {
@@ -50,7 +72,7 @@ public class RealEstate : ClickAccepter
     public void updateProductivity(Occupation occupation) {
         if (occupation.Employee != null)
         {
-            RealProductivity += occupation.Productivity;
+            TheoreticalProductivity += occupation.Productivity;
             Owner.Income += occupation.Productivity;
             Owner.Expenses += occupation.Income;
             payroll += occupation.Income;
@@ -58,11 +80,16 @@ public class RealEstate : ClickAccepter
         } 
         else
         {
-            RealProductivity -= occupation.Productivity;
+            TheoreticalProductivity -= occupation.Productivity;
             Owner.Income -= occupation.Productivity;
             Owner.Expenses -= occupation.Income;
             payroll -= occupation.Income;
             AvailableJobs++;
+        }
+        if( buildingProductivity != null)
+        {
+            var electricityMultiplier = ElectricityRequirement == 0 ? 1 : Mathf.Pow(ElectricityProvided / (float)ElectricityRequirement, 2);
+            buildingProductivity.text = ((Owner.Income - Owner.Expenses) * electricityMultiplier).ToString();
         }
     }
 
@@ -71,42 +98,60 @@ public class RealEstate : ClickAccepter
     {
         Occupations = new Dictionary<Qualification, List<Occupation>>();
         OccupationsList = new List<Occupation>();
-        RealProductivity = 0;
+        TheoreticalProductivity = 0;
         MaxProductivity = 0;
         occupants = new List<Human>();
         oldTaxes = 0;
+        buildingProductivity.text = (Owner.Income - Owner.Expenses).ToString();
         switch (type) {
             case PropertyType.Factory:
-                Occupations.Add(Qualification.NoHS, new List<Occupation>());
-                Occupations.Add(Qualification.HS, new List<Occupation>());
-                Occupations.Add(Qualification.Bachelors, new List<Occupation>());
-                for (int x = 0; x < 24; x++)
                 {
-                    var newOcc = new Occupation(Qualification.NoHS, 40000, this, 80000);
-                    Occupations[Qualification.NoHS].Add(newOcc);
-                    OccupationsList.Add(newOcc);
-                    MaxProductivity += 80000;
-                    AvailableJobs++;
+                    Occupations.Add(Qualification.NoHS, new List<Occupation>());
+                    Occupations.Add(Qualification.HS, new List<Occupation>());
+                    Occupations.Add(Qualification.Bachelors, new List<Occupation>());
+                    for (int x = 0; x < 24; x++)
+                    {
+                        var newOcc = new Occupation(Qualification.NoHS, 40000, this, 80000);
+                        Occupations[newOcc.Requirements].Add(newOcc);
+                        OccupationsList.Add(newOcc);
+                        MaxProductivity += 80000;
+                        AvailableJobs++;
+                    }
+                    /*for (int x = 0; x < 14; x++)
+                    {
+                        var newOcc = (new Occupation(Qualification.HS, 60000, this, 90000));
+                        Occupations[newOcc.Requirements].Add(newOcc);
+                        OccupationsList.Add(newOcc);
+                        Productivity += 90000;
+                    }
+                    for (int x = 0; x < 4; x++)
+                    {
+                        var newOcc = (new Occupation(Qualification.Bachelors, 100000, this, 120000));
+                        Occupations[newOcc.Requirements].Add(newOcc);
+                        OccupationsList.Add(newOcc);
+                        Productivity += 120000;
+                    }*/
+                    maxOccupants = 0;
+                    int numOccupations = OccupationsList.Count;
+                    EightyIncome = OccupationsList[(int)(numOccupations * .8f)].Income;
+                    Housing = 0;
+                    break;
                 }
-                /*for (int x = 0; x < 14; x++)
+            case PropertyType.PowerPlant:
                 {
-                    var newOcc = (new Occupation(Qualification.HS, 60000, this, 90000));
-                    Occupations[Qualification.HS].Add(newOcc);
-                    OccupationsList.Add(newOcc);
-                    Productivity += 90000;
+                    Occupations.Add(Qualification.NoHS, new List<Occupation>());
+                    Occupations.Add(Qualification.HS, new List<Occupation>());
+                    Occupations.Add(Qualification.Bachelors, new List<Occupation>());
+                    for (int x = 0; x < 12; x++)
+                    {
+                        var newOcc = new Occupation(Qualification.HS, 60000, this, 90000);
+                        Occupations[newOcc.Requirements].Add(newOcc);
+                        OccupationsList.Add(newOcc);
+                        MaxProductivity += newOcc.Productivity;
+                        AvailableJobs++;
+                    }
+                    break;
                 }
-                for (int x = 0; x < 4; x++)
-                {
-                    var newOcc = (new Occupation(Qualification.Bachelors, 100000, this, 120000));
-                    Occupations[Qualification.Bachelors].Add(newOcc);
-                    OccupationsList.Add(newOcc);
-                    Productivity += 120000;
-                }*/
-                maxOccupants = 0;
-                int numOccupations = OccupationsList.Count;
-                EightyIncome = OccupationsList[(int)(numOccupations * .8f)].Income;
-                Housing = 0;
-                break;
             default:
                 MaxProductivity = 0;
                 Housing = CityManager.costOfLiving * maxOccupants;
@@ -127,16 +172,17 @@ public class RealEstate : ClickAccepter
         }
         occupants.Add(human);
         human.home = this;
-        Owner.Income += price / 10;
-        human.Actor.Expenses += price / 10;
+        Owner.Income += Price / 10;
+        human.Actor.Expenses += Price / 10;
         human.transform.position = this.transform.position;
+        buildingProductivity.text = (Owner.Income - Owner.Expenses).ToString();
         return true;
     }
     public void CalculateTaxes()
     {
         this.Owner.Expenses -= oldTaxes;
         this.CityManager.Government.Income -= oldTaxes;
-        float newTaxes = this.price * CityManager.taxValue;
+        float newTaxes = this.Price * CityManager.taxValue;
         this.Owner.Expenses += newTaxes;
         this.CityManager.Government.Income += oldTaxes;
         oldTaxes = newTaxes;
@@ -144,11 +190,40 @@ public class RealEstate : ClickAccepter
     // Update is called once per frame
     void Update()
     {
-        
+        if (canvasTransform != null)
+        {
+            Vector3 camPos = Camera.main.transform.position;
+            canvasTransform.LookAt(
+                new Vector3(camPos.x, canvasTransform.position.y, camPos.z)
+            );
+            canvasTransform.Rotate(0, 180, 0);
+        }
     }
 
-    public override void Accept(Vector2 vec)
+    public void minimizeUI()
     {
+        if (canvasTransform != null)
+        {
+            displaying = false;
+            canvasTransform.localScale *= 0;
+        }
+    }
+
+    public override void Accept(Vector2 vec, ClickMode mode, bool isLeftMouse)
+    {
+        if (canvasTransform != null && mode == ClickMode.Select)
+        {
+            if(!displaying)
+            {
+                displaying = true;
+                canvasTransform.localScale = new Vector3(1, 1, 1);
+            }
+            else
+            {
+                displaying = false;
+                canvasTransform.localScale *= 0;
+            }
+        }
         CityManager.setSelectedBuilding(this);
     }
 }

@@ -70,7 +70,7 @@ public class CitySquare
             realEstateValue = value;
             if (RealEstate != null)
             {
-                RealEstate.price = value;
+                RealEstate.Price = value;
             }
         }
     }
@@ -136,7 +136,7 @@ public class CitySquare
                     bool hasRoadAccess = nearbyTiles[tile].roadAccess && tile.HasRoad;
                     if (neighborTile != this)
                     {
-                        if (!nearbyTiles.ContainsKey(neighborTile))
+                        if (!nearbyTiles.ContainsKey(neighborTile) && (dist <= 7 || hasRoadAccess))
                         {
                             nearbyTiles.Add(neighborTile, new CitySquareDist(dist, neighborTile, hasRoadAccess));
                             nextTilesToSearch.Add(neighborTile);
@@ -240,7 +240,7 @@ public class CitySquare
             return;
         }
         RealEstate = ReProperty;
-        RealEstate.price = RealEstateValue;
+        RealEstate.Price = RealEstateValue;
         ReProperty.init(city, this, owner);
         ReProperty.transform.localPosition = offset + new Vector3(0, (Height) + .5f);
     }

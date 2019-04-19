@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum BuildMode { Road, Factory, Select }
+public enum ClickMode { Road, Factory, Select }
 public class CityManager : ClickAccepter
 {
     public HashSet<RealEstate> Properties;
@@ -24,7 +24,7 @@ public class CityManager : ClickAccepter
     private float minREValue;
     public GameObject Human;
     HashSet<Occupation> occupations;
-    public BuildMode clickMode; 
+    public ClickMode clickMode; 
     public List<Human> humans { get; private set; }
     public int population;
     public float costOfLiving;
@@ -39,19 +39,19 @@ public class CityManager : ClickAccepter
     private RealEstate SelectedRealEstate;
     public Text selectedBuildingType;
     public Text selectedBuildingValue;
+    public Canvas SelectedItemInfo;
     public bool paused;
     //public Terrain terrain;
     //private TerrainData terrainData;
     public float taxValue;
-    public void Build(Vector2 vector)
+    public void Build(Vector2 vector, bool addHuh)
     {
-        bool addHuh  = Input.GetMouseButton(0);
         int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
         var roads = map[(int)DrawMode.RoadMap];
         var road = roads[xLoc, yLoc];
         switch (this.clickMode)
         {
-            case BuildMode.Factory:
+            case ClickMode.Factory:
                 roads[xLoc, yLoc] = 0;
                 var tile = cityTiles[xLoc, yLoc];
                 if (addHuh)
@@ -63,7 +63,7 @@ public class CityManager : ClickAccepter
                     DemolishProperty(tile);
                 }
                 break;
-            case BuildMode.Road:
+            case ClickMode.Road:
                 roads[xLoc, yLoc] = addHuh ? 1 : 0;
                 cityTiles[xLoc, yLoc].HasRoad = addHuh;
                 break;
@@ -92,17 +92,19 @@ public class CityManager : ClickAccepter
         }
         if(Input.GetKeyDown(KeyCode.B))
         {
-            this.clickMode = BuildMode.Factory;
+            this.clickMode = ClickMode.Factory;
         }
         if(Input.GetKeyDown(KeyCode.R))
         {
-            this.clickMode = BuildMode.Road;
+            this.clickMode = ClickMode.Road;
         }
         if (Input.GetKeyDown(KeyCode.C))
         {
-            this.clickMode = BuildMode.Select;
+            this.clickMode = ClickMode.Select;
         }
-        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
+        var mouseDown = (Input.GetMouseButton(0) || Input.GetMouseButton(1)) && (this.clickMode == ClickMode.Factory || this.clickMode == ClickMode.Road);
+        var mouseClicked = (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) && this.clickMode == ClickMode.Select;
+        if (mouseDown || mouseClicked)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
@@ -111,11 +113,11 @@ public class CityManager : ClickAccepter
                 ClickAccepter accepter = hit.collider.GetComponent<ClickAccepter>();
                 if (accepter)
                 {
-                    accepter.Accept(hit.textureCoord);
+                    accepter.Accept(hit.textureCoord, clickMode, Input.GetMouseButton(0));
                 }
                 
             }
-            else if (clickMode == BuildMode.Select)
+            else if (clickMode == ClickMode.Select)
             {
                 setSelectedBuilding(null);
             }
@@ -151,10 +153,18 @@ public class CityManager : ClickAccepter
                     buildingType = "Factory";
                     break;
             }
-            price = SelectedRealEstate.price.ToString();
+            price = SelectedRealEstate.Price.ToString();
         }
         this.selectedBuildingType.text = buildingType;
         this.selectedBuildingValue.text = price;
+    }
+
+    private void minimizeUIs()
+    {
+        foreach (RealEstate re in Properties)
+        {
+            re.minimizeUI();
+        }
     }
     
     public void setSelectedBuilding(RealEstate property)
@@ -201,7 +211,7 @@ public class CityManager : ClickAccepter
                 foreach (var commute in occ.Location.CitySquare.Commutes)
                 {
                     var dest = commute.Squares[commute.Squares.Count - 1];
-                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.price < occ.Income * HousingIncomeMultiplier)
+                    if (dest.RealEstate != null && dest.RealEstate.OpenUnits && dest.RealEstate.Price < occ.Income * HousingIncomeMultiplier)
                     {
                         options.Add(commute);
                     }
@@ -374,9 +384,9 @@ public class CityManager : ClickAccepter
         drawTexture();
     }
 
-    public override void Accept(Vector2 vec)
+    public override void Accept(Vector2 vec, ClickMode mode, bool isLeftMouse)
     {
-        Build(vec);
+        Build(vec, isLeftMouse);
     }
 
     public void drawTexture()

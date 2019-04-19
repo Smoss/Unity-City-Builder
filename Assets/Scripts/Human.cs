@@ -115,7 +115,7 @@ public class Human: MonoBehaviour
         cityManager = _cityManager;
         this.transform.parent = cityManager.transform;
         home = _home;
-        homeValue = _home.price;
+        homeValue = _home.Price;
         this.transform.position = home.transform.position;
         location = home.CitySquare;
         qualification = _qualification;

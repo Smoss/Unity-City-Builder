@@ -1042,12 +1042,12 @@ PrefabInstance:
     - target: {fileID: 8408538914455562717, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
       propertyPath: width
-      value: 10
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 8408538914455562717, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
       propertyPath: height
-      value: 10
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 8408538914455562717, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
@@ -1287,6 +1287,11 @@ PrefabInstance:
       propertyPath: selectedBuildingValue
       value: 
       objectReference: {fileID: 1360406999}
+    - target: {fileID: 7897354975159709745, guid: eb29aec682fb461438c1d0f761bb95f4,
+        type: 3}
+      propertyPath: SelectedItemInfo
+      value: 
+      objectReference: {fileID: 45418919}
     - target: {fileID: 4517141494205511613, guid: eb29aec682fb461438c1d0f761bb95f4,
         type: 3}
       propertyPath: m_DynamicOccludee
