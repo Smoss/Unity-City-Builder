@@ -5,6 +5,7 @@ using System;
 
 public enum Direction       { NW, NE, SW, SE };
 public enum MirrorDirection { SE, SW, NE, NW };
+public enum Zoning          { IZone, RZone, CZone };
 public class CitySquare
 {
     static Direction[] clockwise = new Direction[] {
@@ -42,6 +43,7 @@ public class CitySquare
     }
     public float HousingValue { get; private set; }
     public float ProductivityValue { get; private set; }
+    public float ShopValue { get; private set; }
     public float Housing
     {
         get { return RealEstate != null ? RealEstate.Housing : 0; }
@@ -79,6 +81,8 @@ public class CitySquare
     public float Height { get; }
     public float Fertility { get; }
     public List<Route> Commutes { get; private set; }
+    private int traffic;
+    public HashSet<Zoning> ZonedFor { get; private set; }
     Guid guid;
     public float CalculatePropertyValues(int commuteDist, float pollutionExp)
     {
@@ -86,6 +90,7 @@ public class CitySquare
         float propertyValue = 0;
         this.HousingValue = 0;
         this.ProductivityValue = 0;
+        this.ShopValue = traffic * 2000 * 1000f / city.numberOfTicks;
         if (!this.HasRoad)
         {
             HashSet<CitySquareDist> nearbyTiles = this.NearbyTiles(commuteDist);
@@ -109,7 +114,13 @@ public class CitySquare
             propertyValue /= Mathf.Sqrt(productiveCount);
         }
         this.RealEstateValue = propertyValue;
+        traffic = 0;
         return propertyValue;
+    }
+
+    public void addPassThrough()
+    {
+        traffic++;
     }
 
     private HashSet<CitySquareDist> NearbyTiles(int nearbyDist)
@@ -181,6 +192,8 @@ public class CitySquare
         CityManager _city
     )
     {
+        ZonedFor = new HashSet<Zoning>();
+        traffic = 0;
         HousingValue = 0;
         ProductivityValue = 0;
         guid = Guid.NewGuid();

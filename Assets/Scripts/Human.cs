@@ -17,6 +17,21 @@ public class Human: MonoBehaviour
     public RealEstate workplace;
     private RealEstate destination;
     CitySquare location;
+    CitySquare Location
+    {
+        get
+        {
+            return location;
+        }
+        set
+        {
+            if (value != null)
+            {
+                value.addPassThrough();
+            }
+            location = value;
+        }
+    }
     CitySquare nextLocation;
     int locationPointer;
     Route routeTo;
@@ -31,17 +46,17 @@ public class Human: MonoBehaviour
         if(
             rail != null &&
             nextLocation != null &&
-            location != destination.CitySquare &&
+            Location != destination.CitySquare &&
             workplace != home
         )
         {
             dist = (this.transform.localPosition - (nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f, 0))).magnitude;
             if (dist < .01 || distTraveled > rail.magnitude)
             {
-                location = nextLocation;
+                Location = nextLocation;
                 this.transform.localPosition = nextLocation.Offset + new Vector3(0, nextLocation.Height + .5f);
                 distTraveled = 0;
-                if (location == destination.CitySquare)
+                if (Location == destination.CitySquare)
                 {
                     if (destination == workplace)
                     {
@@ -70,8 +85,8 @@ public class Human: MonoBehaviour
     void getNextLocation()
     {
         nextLocation = routeTo.Squares[locationPointer];
-        rail = nextLocation.Offset - location.Offset;
-        rail.y = (nextLocation.Height - location.Height);
+        rail = nextLocation.Offset - Location.Offset;
+        rail.y = (nextLocation.Height - Location.Height);
     }
     public Occupation Occupation
     {
@@ -98,10 +113,10 @@ public class Human: MonoBehaviour
     {
         locationPointer = 0;
         destination = workplace;
-        routeTo = location.Routes[destination.CitySquare];
+        routeTo = Location.Routes[destination.CitySquare];
         nextLocation = routeTo.Squares[locationPointer];
-        rail = nextLocation.Offset - location.Offset;
-        rail.y = (nextLocation.Height - location.Height);
+        rail = nextLocation.Offset - Location.Offset;
+        rail.y = (nextLocation.Height - Location.Height);
         distTraveled = 0;
     }
 
@@ -117,7 +132,7 @@ public class Human: MonoBehaviour
         home = _home;
         homeValue = _home.Price;
         this.transform.position = home.transform.position;
-        location = home.CitySquare;
+        Location = home.CitySquare;
         qualification = _qualification;
     }
 

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 
-public enum PropertyType { Factory, Home, PowerPlant}
+public enum PropertyType { Factory, Home, PowerPlant, Shop }
 public class RealEstate : ClickAccepter
 {
     public Guid id;
@@ -109,22 +109,22 @@ public class RealEstate : ClickAccepter
                     Occupations.Add(Qualification.NoHS, new List<Occupation>());
                     Occupations.Add(Qualification.HS, new List<Occupation>());
                     Occupations.Add(Qualification.Bachelors, new List<Occupation>());
-                    for (int x = 0; x < 24; x++)
+                    /*for (int x = 0; x < 24; x++)
                     {
                         var newOcc = new Occupation(Qualification.NoHS, 40000, this, 80000);
                         Occupations[newOcc.Requirements].Add(newOcc);
                         OccupationsList.Add(newOcc);
                         MaxProductivity += 80000;
                         AvailableJobs++;
-                    }
-                    /*for (int x = 0; x < 14; x++)
+                    }*/
+                    for (int x = 0; x < 14; x++)
                     {
                         var newOcc = (new Occupation(Qualification.HS, 60000, this, 90000));
                         Occupations[newOcc.Requirements].Add(newOcc);
                         OccupationsList.Add(newOcc);
-                        Productivity += 90000;
+                        MaxProductivity += 90000;
                     }
-                    for (int x = 0; x < 4; x++)
+                    /*for (int x = 0; x < 4; x++)
                     {
                         var newOcc = (new Occupation(Qualification.Bachelors, 100000, this, 120000));
                         Occupations[newOcc.Requirements].Add(newOcc);
@@ -135,6 +135,10 @@ public class RealEstate : ClickAccepter
                     int numOccupations = OccupationsList.Count;
                     EightyIncome = OccupationsList[(int)(numOccupations * .8f)].Income;
                     Housing = 0;
+                    break;
+                }
+            case PropertyType.Shop:
+                {
                     break;
                 }
             case PropertyType.PowerPlant:
@@ -213,7 +217,7 @@ public class RealEstate : ClickAccepter
     {
         if (canvasTransform != null && mode == ClickMode.Select)
         {
-            if(!displaying)
+            if(isLeftMouse)
             {
                 displaying = true;
                 canvasTransform.localScale = new Vector3(1, 1, 1);

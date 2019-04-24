@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum ClickMode { Road, Factory, Select }
+public enum ClickMode { Road, Factory, Select, RZone, IZone, CZone }
 public class CityManager : ClickAccepter
 {
     public HashSet<RealEstate> Properties;
@@ -18,6 +18,7 @@ public class CityManager : ClickAccepter
     List<float[,]> map;
     //float timeSince;
     public int tick;
+    public int numberOfTicks;
     public int commuteDist;
     public float pollutionExp;
     private float maxREValue;
@@ -49,11 +50,23 @@ public class CityManager : ClickAccepter
         int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
         var roads = map[(int)DrawMode.RoadMap];
         var road = roads[xLoc, yLoc];
+        var tile = cityTiles[xLoc, yLoc];
         switch (this.clickMode)
         {
+            case ClickMode.RZone:
+                map[(int)DrawMode.RZone][xLoc, yLoc] = 1;
+                tile.ZonedFor.Add(Zoning.RZone);
+                break;
+            case ClickMode.IZone:
+                map[(int)DrawMode.IZone][xLoc, yLoc] = 1;
+                tile.ZonedFor.Add(Zoning.IZone);
+                break;
+            case ClickMode.CZone:
+                map[(int)DrawMode.CZone][xLoc, yLoc] = 1;
+                tile.ZonedFor.Add(Zoning.CZone);
+                break;
             case ClickMode.Factory:
                 roads[xLoc, yLoc] = 0;
-                var tile = cityTiles[xLoc, yLoc];
                 if (addHuh)
                 {
                     BuildProperty(this.Factory, tile, this.Government);
@@ -70,10 +83,22 @@ public class CityManager : ClickAccepter
             default:
                 break;
         }
-        if (drawMode == DrawMode.RoadMap)
-        {
-            drawTexture();
-        }
+        drawTexture();
+    }
+
+    public void SetRZoning()
+    {
+        this.clickMode = ClickMode.RZone;
+    }
+
+    public void SetIZoning()
+    {
+        this.clickMode = ClickMode.IZone;
+    }
+
+    public void SetCZoning()
+    {
+        this.clickMode = ClickMode.CZone;
     }
 
     // Start is called before the first frame update
@@ -102,9 +127,8 @@ public class CityManager : ClickAccepter
         {
             this.clickMode = ClickMode.Select;
         }
-        var mouseDown = (Input.GetMouseButton(0) || Input.GetMouseButton(1)) && (this.clickMode == ClickMode.Factory || this.clickMode == ClickMode.Road);
-        var mouseClicked = (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) && this.clickMode == ClickMode.Select;
-        if (mouseDown || mouseClicked)
+        var mouseDown = (Input.GetMouseButton(0) || Input.GetMouseButton(1));
+        if (mouseDown)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit = new RaycastHit();
@@ -128,7 +152,7 @@ public class CityManager : ClickAccepter
         {
             tick++;
         }
-        if(tick > 250)
+        if(tick > numberOfTicks)
         {
             CalculatePropertyValues();
             ScheduleBuilds();
@@ -155,8 +179,8 @@ public class CityManager : ClickAccepter
             }
             price = SelectedRealEstate.Price.ToString();
         }
-        this.selectedBuildingType.text = buildingType;
-        this.selectedBuildingValue.text = price;
+        /*this.selectedBuildingType.text = buildingType;
+        this.selectedBuildingValue.text = price;*/
     }
 
     private void minimizeUIs()
@@ -335,7 +359,7 @@ public class CityManager : ClickAccepter
         Economy = new EconomicUnit(null);
         Government = new EconomicUnit(Economy);
         //RealEstate reTest = Factory.GetComponent<RealEstate>();
-        tick = 1000;
+        tick = numberOfTicks;
         occupations = new HashSet<Occupation>();
         foreach (var occ in occupations)
         {
