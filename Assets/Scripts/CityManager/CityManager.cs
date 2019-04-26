@@ -3,9 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public enum ClickMode { Road, Factory, Select, RZone, IZone, CZone }
-public class CityManager : ClickAccepter
+public class CityManager : MonoBehaviour, IPointerDownHandler
 {
     public HashSet<RealEstate> Properties;
     public GameObject Factory;
@@ -13,7 +14,23 @@ public class CityManager : ClickAccepter
     public MapGenerator MapGenerator;
     CitySquare[,] cityTiles;
     float[,] propertyValues;
-    public DrawMode drawMode;
+    private DrawMode selectedDrawMode;
+    public DrawMode SelectedDrawMode
+    {
+        get
+        {
+            return selectedDrawMode;
+        }
+        set
+        {
+            selectedDrawMode = value;
+            if (SelectedDrawModeName != null)
+            {
+                SelectedDrawModeName.text = Enum.GetName(typeof(DrawMode), selectedDrawMode);
+            }
+            this.drawTexture();
+        }
+    }
     Color32[] colorSet;
     List<float[,]> map;
     //float timeSince;
@@ -25,7 +42,22 @@ public class CityManager : ClickAccepter
     private float minREValue;
     public GameObject Human;
     HashSet<Occupation> occupations;
-    public ClickMode clickMode; 
+    private ClickMode selectedClickMode;
+    public ClickMode SelectedClickMode
+    {
+        get
+        {
+            return selectedClickMode;
+        }
+        set
+        {
+            selectedClickMode = value;
+            if (SelectedClickModeName != null)
+            {
+                SelectedClickModeName.text = Enum.GetName(typeof(ClickMode), selectedClickMode);
+            }
+        }
+    }
     public List<Human> humans { get; private set; }
     public int population;
     public float costOfLiving;
@@ -38,8 +70,10 @@ public class CityManager : ClickAccepter
     public EconomicUnit Economy;
     public EconomicUnit Government;
     private RealEstate SelectedRealEstate;
-    public Text selectedBuildingType;
-    public Text selectedBuildingValue;
+    /*public Text selectedBuildingType;
+    public Text selectedBuildingValue;*/
+    public Text SelectedClickModeName;
+    public Text SelectedDrawModeName;
     public Canvas SelectedItemInfo;
     public bool paused;
     //public Terrain terrain;
@@ -47,11 +81,11 @@ public class CityManager : ClickAccepter
     public float taxValue;
     public void Build(Vector2 vector, bool addHuh)
     {
-        int xLoc = (int)(vector.x * (cityTiles.GetLength(0) + 1)), yLoc = (int)(vector.y * (cityTiles.GetLength(1) + 1));
+        int xLoc = (int)(Math.Floor(vector.x)), yLoc = (int)(cityTiles.GetLength(1) - Math.Ceiling(vector.y));
         var roads = map[(int)DrawMode.RoadMap];
         var road = roads[xLoc, yLoc];
         var tile = cityTiles[xLoc, yLoc];
-        switch (this.clickMode)
+        switch (this.SelectedClickMode)
         {
             case ClickMode.RZone:
                 map[(int)DrawMode.RZone][xLoc, yLoc] = 1;
@@ -88,17 +122,22 @@ public class CityManager : ClickAccepter
 
     public void SetRZoning()
     {
-        this.clickMode = ClickMode.RZone;
+        this.SelectedClickMode = ClickMode.RZone;
     }
 
     public void SetIZoning()
     {
-        this.clickMode = ClickMode.IZone;
+        this.SelectedClickMode = ClickMode.IZone;
     }
 
     public void SetCZoning()
     {
-        this.clickMode = ClickMode.CZone;
+        this.SelectedClickMode = ClickMode.CZone;
+    }
+
+    public void SetDrawMode(Int32 drawMode)
+    {
+        SelectedDrawMode = (DrawMode)drawMode;
     }
 
     // Start is called before the first frame update
@@ -117,34 +156,15 @@ public class CityManager : ClickAccepter
         }
         if(Input.GetKeyDown(KeyCode.B))
         {
-            this.clickMode = ClickMode.Factory;
+            this.SelectedClickMode = ClickMode.Factory;
         }
         if(Input.GetKeyDown(KeyCode.R))
         {
-            this.clickMode = ClickMode.Road;
+            this.SelectedClickMode = ClickMode.Road;
         }
         if (Input.GetKeyDown(KeyCode.C))
         {
-            this.clickMode = ClickMode.Select;
-        }
-        var mouseDown = (Input.GetMouseButton(0) || Input.GetMouseButton(1));
-        if (mouseDown)
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit = new RaycastHit();
-            if (Physics.Raycast(ray, out hit))
-            {
-                ClickAccepter accepter = hit.collider.GetComponent<ClickAccepter>();
-                if (accepter)
-                {
-                    accepter.Accept(hit.textureCoord, clickMode, Input.GetMouseButton(0));
-                }
-                
-            }
-            else if (clickMode == ClickMode.Select)
-            {
-                setSelectedBuilding(null);
-            }
+            this.SelectedClickMode = ClickMode.Select;
         }
         updateUI();
         //Change this to use ticks
@@ -319,7 +339,7 @@ public class CityManager : ClickAccepter
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
                 float propertyValue = cityTiles[x, y].CalculatePropertyValues(commuteDist, pollutionExp);
-                switch (drawMode)
+                switch (SelectedDrawMode)
                 {
                     case DrawMode.HousingValue:
                         propertyValue = cityTiles[x, y].HousingValue;
@@ -341,13 +361,13 @@ public class CityManager : ClickAccepter
                 }
             }
         }
-        if(drawMode == DrawMode.PropertyValue || drawMode == DrawMode.HousingValue || drawMode == DrawMode.ProductivityValue)
+        if(SelectedDrawMode == DrawMode.PropertyValue || SelectedDrawMode == DrawMode.HousingValue || SelectedDrawMode == DrawMode.ProductivityValue)
         {
             for (int x = 0; x < cityTiles.GetLength(0); x++)
             {
                 for (int y = 0; y < cityTiles.GetLength(1); y++)
                 {
-                    map[(int)drawMode][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
+                    map[(int)SelectedDrawMode][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
                 }
             }
             drawTexture();
@@ -355,6 +375,8 @@ public class CityManager : ClickAccepter
     }
     private void init()
     {
+        SelectedClickMode = selectedClickMode;
+        SelectedDrawMode = selectedDrawMode;
         humans = new List<Human>();
         Economy = new EconomicUnit(null);
         Government = new EconomicUnit(Economy);
@@ -383,7 +405,7 @@ public class CityManager : ClickAccepter
         colorSet = new Color32[2];
         colorSet[0] = Color.green;
         colorSet[1] = Color.red;
-        MapGenerator.drawMode = drawMode;
+        MapGenerator.drawMode = SelectedDrawMode;
         MapGenerator.colorSet = colorSet;
         map = MapGenerator.GenerateMap(this);
 
@@ -408,15 +430,24 @@ public class CityManager : ClickAccepter
         drawTexture();
     }
 
-    public override void Accept(Vector2 vec, ClickMode mode, bool isLeftMouse)
-    {
-        Build(vec, isLeftMouse);
-    }
-
     public void drawTexture()
     {
-        Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)drawMode], colorSet);
-        GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
+        if (map != null)
+        {
+            Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)SelectedDrawMode], colorSet);
+            GetComponent<MeshRenderer>().sharedMaterial.mainTexture = tex;
+        }
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (SelectedClickMode == ClickMode.Select || eventData.pointerCurrentRaycast.gameObject != this.gameObject)
+        {
+            return;
+        }
+        Vector3 worldCoord = eventData.pointerCurrentRaycast.worldPosition - this.transform.position;
+        var temp = new Vector2(worldCoord.x, worldCoord.z) + (this.MapGenerator.scale * new Vector2(cityTiles.GetLength(0) / 2f, cityTiles.GetLength(1) / 2f));
+        Build(temp, eventData.button == PointerEventData.InputButton.Left);
     }
 }
 public class CitySquareDist

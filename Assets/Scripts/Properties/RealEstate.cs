@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using UnityEngine.EventSystems;
 
 public enum PropertyType { Factory, Home, PowerPlant, Shop }
-public class RealEstate : ClickAccepter
+public class RealEstate : MonoBehaviour, IPointerDownHandler
 {
     public Guid id;
     public PropertyType type;
@@ -213,11 +214,11 @@ public class RealEstate : ClickAccepter
         }
     }
 
-    public override void Accept(Vector2 vec, ClickMode mode, bool isLeftMouse)
+    public void OnPointerDown(PointerEventData eventData)
     {
-        if (canvasTransform != null && mode == ClickMode.Select)
+        if (canvasTransform != null && CityManager.SelectedClickMode == ClickMode.Select)
         {
-            if(isLeftMouse)
+            if (eventData.button == PointerEventData.InputButton.Left)
             {
                 displaying = true;
                 canvasTransform.localScale = new Vector3(1, 1, 1);
