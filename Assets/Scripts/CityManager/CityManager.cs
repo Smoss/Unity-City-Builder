@@ -52,6 +52,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         set
         {
             selectedClickMode = value;
+            painting = false;
             if (SelectedClickModeName != null)
             {
                 SelectedClickModeName.text = Enum.GetName(typeof(ClickMode), selectedClickMode);
@@ -79,6 +80,8 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
     //public Terrain terrain;
     //private TerrainData terrainData;
     public float taxValue;
+    private bool painting;
+    private PointerEventData painterEvent;
     public void Build(Vector2 vector, bool addHuh)
     {
         int xLoc = (int)(Math.Floor(vector.x)), yLoc = (int)(cityTiles.GetLength(1) - Math.Ceiling(vector.y));
@@ -167,6 +170,11 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
             this.SelectedClickMode = ClickMode.Select;
         }
         updateUI();
+        painting = painting && painterEvent != null && ClickMode.Factory != SelectedClickMode && continuePainting(painterEvent);
+        if (painting)
+        {
+            Build(convertToCitySquare(painterEvent), painterEvent.button == PointerEventData.InputButton.Left);
+        }
         //Change this to use ticks
         if (!this.paused)
         {
@@ -295,7 +303,8 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
                     tile.HousingValue > Home.GetComponent<RealEstate>().maxOccupants * costOfLiving * HousingMultiplier &&
                     tile.RealEstate == null && 
                     !tile.HasRoad && 
-                    tile.HousingValue > tile.RealEstateValue
+                    tile.HousingValue > tile.RealEstateValue &&
+                    tile.ZonedFor.Contains(Zoning.RZone)
                 )
                 {
                     BuildProperty(Home, tile, this.Economy);
@@ -303,7 +312,8 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
                 else if (tile.ProductivityValue > 200000 * FactoryMultiplier &&
                     tile.RealEstate == null &&
                     !tile.HasRoad &&
-                    tile.ProductivityValue > tile.RealEstateValue
+                    tile.ProductivityValue > tile.RealEstateValue &&
+                    tile.ZonedFor.Contains(Zoning.IZone)
                 )
                 {
                     BuildProperty(Factory, tile, this.Economy);
@@ -439,15 +449,30 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         }
     }
 
+    private Vector2 convertToCitySquare(PointerEventData eventData)
+    {
+        Vector3 worldCoord = eventData.pointerCurrentRaycast.worldPosition - this.transform.position;
+        return new Vector2(worldCoord.x, worldCoord.z) + (this.MapGenerator.scale * new Vector2(cityTiles.GetLength(0) / 2f, cityTiles.GetLength(1) / 2f));
+    }
+
+    private bool continuePainting(PointerEventData eventData)
+    {
+        return !(
+            SelectedClickMode == ClickMode.Select ||
+            eventData.pointerCurrentRaycast.gameObject != this.gameObject ||
+            eventData.button == PointerEventData.InputButton.Middle
+        );
+    }
+
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (SelectedClickMode == ClickMode.Select || eventData.pointerCurrentRaycast.gameObject != this.gameObject)
+        painting = continuePainting(eventData) && (!painting || ((painterEvent.button) != eventData.button));
+        if (!painting)
         {
             return;
         }
-        Vector3 worldCoord = eventData.pointerCurrentRaycast.worldPosition - this.transform.position;
-        var temp = new Vector2(worldCoord.x, worldCoord.z) + (this.MapGenerator.scale * new Vector2(cityTiles.GetLength(0) / 2f, cityTiles.GetLength(1) / 2f));
-        Build(temp, eventData.button == PointerEventData.InputButton.Left);
+        painterEvent = eventData;
+        Build(convertToCitySquare(eventData), eventData.button == PointerEventData.InputButton.Left);
     }
 }
 public class CitySquareDist

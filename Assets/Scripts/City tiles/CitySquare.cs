@@ -252,6 +252,7 @@ public class CitySquare
         {
             return;
         }
+        ZonedFor.Add(ReProperty.zone);
         RealEstate = ReProperty;
         RealEstate.Price = RealEstateValue;
         ReProperty.init(city, this, owner);

@@ -63,6 +63,7 @@ public class RealEstate : MonoBehaviour, IPointerDownHandler
     //public float ElectricityGeneration { get { return } }
     public float ElectricityProvided;
     public float EffectiveProductivity { get; private set; }
+    public Zoning zone;
 
     public void init(CityManager _cityManager, CitySquare _CitySquare, EconomicUnit _owner)
     {
@@ -116,7 +117,6 @@ public class RealEstate : MonoBehaviour, IPointerDownHandler
                         Occupations[newOcc.Requirements].Add(newOcc);
                         OccupationsList.Add(newOcc);
                         MaxProductivity += 80000;
-                        AvailableJobs++;
                     }*/
                     for (int x = 0; x < 14; x++)
                     {
@@ -134,6 +134,7 @@ public class RealEstate : MonoBehaviour, IPointerDownHandler
                     }*/
                     maxOccupants = 0;
                     int numOccupations = OccupationsList.Count;
+                    AvailableJobs = numOccupations;
                     EightyIncome = OccupationsList[(int)(numOccupations * .8f)].Income;
                     Housing = 0;
                     break;
