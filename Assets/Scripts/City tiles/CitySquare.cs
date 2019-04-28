@@ -5,7 +5,7 @@ using System;
 
 public enum Direction       { NW, NE, SW, SE };
 public enum MirrorDirection { SE, SW, NE, NW };
-public enum Zoning          { IZone, RZone, CZone };
+public enum Zoning          { RZone=3, IZone=4, CZone=5 };
 public class CitySquare
 {
     static Direction[] clockwise = new Direction[] {

@@ -269,6 +269,7 @@ MonoBehaviour:
   ElectricityRequirement: 0
   MaxElectricityGeneration: 0
   ElectricityProvided: 0
+  zone: 4
 --- !u!65 &2555130641789036522
 BoxCollider:
   m_ObjectHideFlags: 0

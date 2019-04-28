@@ -681,6 +681,10 @@ MonoBehaviour:
   buildingValue: {fileID: 4654337242849298733}
   buildingProductivity: {fileID: 6604407398712374422}
   canvasTransform: {fileID: 7199694925735503048}
+  ElectricityRequirement: 0
+  MaxElectricityGeneration: 0
+  ElectricityProvided: 0
+  zone: 3
 --- !u!65 &3655050339004433633
 BoxCollider:
   m_ObjectHideFlags: 0

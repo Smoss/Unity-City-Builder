@@ -79,27 +79,28 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
     public bool paused;
     //public Terrain terrain;
     //private TerrainData terrainData;
-    public float taxValue;
+    public Single taxValue;
     private bool painting;
     private PointerEventData painterEvent;
+    public Text taxText;
     public void Build(Vector2 vector, bool addHuh)
     {
-        int xLoc = (int)(Math.Floor(vector.x)), yLoc = (int)(cityTiles.GetLength(1) - Math.Ceiling(vector.y));
+        int xLoc = (int)(vector.x), yLoc = (int)(vector.y);
         var roads = map[(int)DrawMode.RoadMap];
         var road = roads[xLoc, yLoc];
         var tile = cityTiles[xLoc, yLoc];
         switch (this.SelectedClickMode)
         {
             case ClickMode.RZone:
-                map[(int)DrawMode.RZone][xLoc, yLoc] = 1;
+                map[(int)DrawMode.RZone][xLoc, yLoc] = addHuh ? 1 : 0;
                 tile.ZonedFor.Add(Zoning.RZone);
                 break;
             case ClickMode.IZone:
-                map[(int)DrawMode.IZone][xLoc, yLoc] = 1;
+                map[(int)DrawMode.IZone][xLoc, yLoc] = addHuh ? 1 : 0;
                 tile.ZonedFor.Add(Zoning.IZone);
                 break;
             case ClickMode.CZone:
-                map[(int)DrawMode.CZone][xLoc, yLoc] = 1;
+                map[(int)DrawMode.CZone][xLoc, yLoc] = addHuh ? 1 : 0;
                 tile.ZonedFor.Add(Zoning.CZone);
                 break;
             case ClickMode.Factory:
@@ -237,6 +238,14 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         {
             commuteDist = 1;
         }
+        if (taxValue > 1)
+        {
+            taxValue = 1;
+        }
+        if (taxValue < 0)
+        {
+            taxValue = 0;
+        }
     }
 
     private void SetColors()
@@ -327,8 +336,11 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         DemolishProperty(tile);
         if (tile.RealEstate == null)
         {
+            Vector2 index = offsetToIndex(tile.Offset);
             GameObject newRE = Instantiate(newConstruction);
             RealEstate newREVal = newRE.GetComponent<RealEstate>();
+            int mapIndex = (int)newREVal.zone + 3;
+            map[mapIndex][(int)index.x, (int)index.y] = 1;
             Properties.Add(newREVal);
             newRE.transform.parent = this.transform;
             tile.AddPropertyCentral(newREVal, owner);
@@ -449,10 +461,16 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         }
     }
 
+    private Vector2 offsetToIndex(Vector3 coord)
+    {
+        var tempVector = new Vector2(coord.x, coord.z) + (this.MapGenerator.scale * new Vector2(cityTiles.GetLength(0) / 2f, cityTiles.GetLength(1) / 2f));
+        return new Vector2((float)Math.Floor(tempVector.x), (float)(cityTiles.GetLength(1) - Math.Ceiling(tempVector.y)));
+    }
+
     private Vector2 convertToCitySquare(PointerEventData eventData)
     {
         Vector3 worldCoord = eventData.pointerCurrentRaycast.worldPosition - this.transform.position;
-        return new Vector2(worldCoord.x, worldCoord.z) + (this.MapGenerator.scale * new Vector2(cityTiles.GetLength(0) / 2f, cityTiles.GetLength(1) / 2f));
+        return offsetToIndex(worldCoord);
     }
 
     private bool continuePainting(PointerEventData eventData)
@@ -473,6 +491,14 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         }
         painterEvent = eventData;
         Build(convertToCitySquare(eventData), eventData.button == PointerEventData.InputButton.Left);
+    }
+    public void ChangeTaxes(Single _taxes)
+    {
+        taxValue = _taxes / 100;
+        if (taxText != null)
+        {
+            taxText.text = "Tax Rate: " + _taxes.ToString() + "%";
+        }
     }
 }
 public class CitySquareDist
