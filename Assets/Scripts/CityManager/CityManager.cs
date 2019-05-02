@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public enum ClickMode { Road, Factory, Select, RZone, IZone, CZone }
-public class CityManager : MonoBehaviour, IPointerDownHandler
+public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
 {
     static HashSet<ClickMode> ZoningModesC = new HashSet<ClickMode>(new ClickMode[] { ClickMode.CZone, ClickMode.IZone, ClickMode.RZone });
     static HashSet<DrawMode> ZoningModesD = new HashSet<DrawMode>(new DrawMode[] { DrawMode.CZone, DrawMode.IZone, DrawMode.RZone });
@@ -190,7 +190,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
             this.SelectedClickMode = ClickMode.Select;
         }
         updateUI();
-        resetCitySquares();
+        resetTextureSquares();
         var tempPainting = painting;
         painting = painting && painterEvent != null && ClickMode.Factory != SelectedClickMode && continuePainting(painterEvent);
         if (tempPainting && !painting)
@@ -223,7 +223,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         }
     }
 
-    private void resetCitySquares()
+    private void resetTextureSquares()
     {
         if(ZoningModesD.Contains(SelectedDrawMode) && ((int)selectedClickMode + 3) == (int)selectedDrawMode && painting)
         {
@@ -546,14 +546,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (painting && ZoningModesC.Contains(selectedClickMode) && painterEvent!= null && eventData.button == painterEvent.button)
-        {
-            highlightSquare(painterEvent.button == PointerEventData.InputButton.Left ? 1 : 0, InitialVector);
-            painting = false;
-            resetCitySquares();
-            return;
-        }
-        else if (ZoningModesC.Contains(selectedClickMode) && !painting)
+        if (ZoningModesC.Contains(selectedClickMode) && !painting)
         {
             InitialVector = eventData.pointerCurrentRaycast.worldPosition;
             InitialButton = eventData.button;
@@ -562,6 +555,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         }
         else if (painting && ZoningModesC.Contains(selectedClickMode))
         {
+            resetTextureSquares();
             painting = false;
             drawTexture();
         }
@@ -583,6 +577,24 @@ public class CityManager : MonoBehaviour, IPointerDownHandler
         {
             taxText.text = "Tax Rate: " + _taxes.ToString() + "%";
         }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (painting && ZoningModesC.Contains(selectedClickMode) && painterEvent != null && eventData.button == painterEvent.button)
+        {
+            highlightSquare(painterEvent.button == PointerEventData.InputButton.Left ? 1 : 0, InitialVector);
+            painting = false;
+            resetTextureSquares();
+            return;
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        resetTextureSquares();
+        painting = false;
+        drawTexture();
     }
 }
 public class CitySquareDist

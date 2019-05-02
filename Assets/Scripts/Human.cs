@@ -67,8 +67,11 @@ public class Human: MonoBehaviour
                         destination = workplace;
                     }
                     locationPointer = 0;
-                    routeTo = nextLocation.Routes[destination.CitySquare];
-                    getNextLocation();
+                    if (nextLocation.Routes.ContainsKey(destination.CitySquare))
+                    {
+                        routeTo = nextLocation.Routes[destination.CitySquare];
+                        getNextLocation();
+                    }
                     return;
                 }
                 locationPointer++;
