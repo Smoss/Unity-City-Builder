@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum DrawMode { Terain, Fertility, PropertyValue, HousingValue, ProductivityValue, RoadMap, RZone, IZone, CZone };
+public enum DrawMode { Terain, Fertility, PropertyValue, HousingValue, ProductivityValue, RoadMap, RZone, IZone, CZone, Traffic, ShopValue };
 public class MapGenerator : MonoBehaviour
 {
 
@@ -89,7 +89,7 @@ public class MapGenerator : MonoBehaviour
         aWidth = width + 1;
         aHeight = height + 1;
         map = new List<float[,]>();
-        for (int x = 0; x < 9; x++)
+        for (int x = 0; x < 11; x++)
         {
             map.Add(new float[aWidth, aHeight]);
         }
@@ -171,10 +171,8 @@ public class MapGenerator : MonoBehaviour
 
     void MakeTiles(CityPoint[,] cityPoints, int width, int height, float scale, float vScale, CityManager city)
     {
-        float halfWidth = width / 2f;
-        float halfHeight = height / 2f;
-        float widthOffset = width % 2 * .5f;
-        float heightOffset = height % 2 * .5f;
+        float halfWidth = width / 2f - .5f;
+        float halfHeight = height / 2f - .5f;
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
@@ -193,7 +191,7 @@ public class MapGenerator : MonoBehaviour
                     scale,
                     vScale,
                     drawMode,
-                    new Vector3((x - halfWidth + widthOffset), 0, (halfHeight - y - heightOffset)),
+                    new Vector3((x - halfWidth), 0, (halfHeight - y)),
                     city
                 );
                 if( x > 0)

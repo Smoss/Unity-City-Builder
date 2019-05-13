@@ -87,6 +87,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private PointerEventData.InputButton InitialButton;
     private Vector3 InitialVector;
     public Text taxText;
+    public float trafficLimit;
     public void Build(Vector2 vector, bool addHuh, float assignValue = 1f)
     {
         int xLoc = (int)(vector.x), yLoc = (int)(vector.y);
@@ -292,13 +293,17 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             taxValue = 0;
         }
+        if (trafficLimit == 0)
+        {
+            trafficLimit = .1f;
+        }
     }
 
     private void SetColors()
     {
         foreach(RealEstate estate in Properties)
         {
-            estate.SetTexture(minREValue, maxREValue);
+            //estate.SetTexture(minREValue, maxREValue);
         }
     }
 
@@ -323,7 +328,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                         options.Add(commute);
                     }
                 }
-                if(options.Count > 1)
+                if(options.Count >= 1)
                 {
                     float best = float.MaxValue;
                     int index = 0;
@@ -402,13 +407,22 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         minREValue = float.MaxValue;
         maxREValue = float.MinValue;
+        float minTraffic = float.MaxValue;
+        float maxTraffic = 0;
         for (int x = 0; x < cityTiles.GetLength(0); x++)
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
+                map[(int)DrawMode.Traffic][x, y] = cityTiles[x, y].Traffic / trafficLimit;
                 float propertyValue = cityTiles[x, y].CalculatePropertyValues(commuteDist, pollutionExp);
                 switch (SelectedDrawMode)
                 {
+                    case DrawMode.ShopValue:
+                        propertyValue = cityTiles[x, y].ShopValue;
+                        propertyValues[x, y] = propertyValue;
+                        maxREValue = 100000;
+                        minREValue = 0;
+                        break;
                     case DrawMode.HousingValue:
                         propertyValue = cityTiles[x, y].HousingValue;
                         propertyValues[x, y] = propertyValue;
@@ -429,7 +443,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                 }
             }
         }
-        if(SelectedDrawMode == DrawMode.PropertyValue || SelectedDrawMode == DrawMode.HousingValue || SelectedDrawMode == DrawMode.ProductivityValue)
+        if (SelectedDrawMode == DrawMode.PropertyValue || SelectedDrawMode == DrawMode.HousingValue || SelectedDrawMode == DrawMode.ProductivityValue || SelectedDrawMode == DrawMode.ShopValue)
         {
             for (int x = 0; x < cityTiles.GetLength(0); x++)
             {
@@ -438,8 +452,8 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                     map[(int)SelectedDrawMode][x, y] = Mathf.InverseLerp(minREValue, maxREValue, propertyValues[x, y]);
                 }
             }
-            drawTexture();
         }
+        drawTexture();
     }
     private void init()
     {

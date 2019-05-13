@@ -82,6 +82,29 @@ public class CitySquare
     public float Fertility { get; }
     public List<Route> Commutes { get; private set; }
     private int traffic;
+    private float trafficValue;
+    public int Traffic
+    {
+        get
+        {
+            return traffic;
+        }
+        set
+        {
+            traffic = value;
+        }
+    }
+    public float TrafficValue
+    {
+        get
+        {
+            return trafficValue;
+        }
+        set
+        {
+            trafficValue = value;
+        }
+    }
     public HashSet<Zoning> ZonedFor { get; private set; }
     Guid guid;
     public float CalculatePropertyValues(int commuteDist, float pollutionExp)
@@ -90,7 +113,16 @@ public class CitySquare
         float propertyValue = 0;
         this.HousingValue = 0;
         this.ProductivityValue = 0;
-        this.ShopValue = traffic * 2000 * 1000f / city.numberOfTicks;
+        this.ShopValue = 0;
+        if (!this.hasRoad)
+        {
+            foreach (var tile in Neighbors)
+            {
+
+                this.ShopValue += tile.trafficValue;
+            }
+            this.ShopValue += this.trafficValue;
+        }
         if (!this.HasRoad)
         {
             HashSet<CitySquareDist> nearbyTiles = this.NearbyTiles(commuteDist);
@@ -114,13 +146,19 @@ public class CitySquare
             propertyValue /= Mathf.Sqrt(productiveCount);
         }
         this.RealEstateValue = propertyValue;
-        traffic = 0;
         return propertyValue;
     }
 
-    public void addPassThrough()
+    public void addPassThrough(Human human)
     {
         traffic++;
+        trafficValue += human.income * .02f;
+    }
+
+    public void removePassThrough(Human human)
+    {
+        traffic--;
+        trafficValue -= human.income * .02f;
     }
 
     private HashSet<CitySquareDist> NearbyTiles(int nearbyDist)

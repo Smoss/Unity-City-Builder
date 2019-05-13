@@ -25,10 +25,6 @@ public class Human: MonoBehaviour
         }
         set
         {
-            if (value != null)
-            {
-                value.addPassThrough();
-            }
             location = value;
         }
     }
@@ -95,13 +91,33 @@ public class Human: MonoBehaviour
     {
         get { return occupation; }
         set {
-            if(value != null)
+            if (workplace != null)
             {
+                foreach (var square in home.CitySquare.Routes[workplace.CitySquare].Squares)
+                {
+                    square.removePassThrough(this);
+                }
+                foreach (var square in workplace.CitySquare.Routes[home.CitySquare].Squares)
+                {
+                    square.removePassThrough(this);
+                }
+            }
+            if (value != null)
+            {
+                this.Actor.Income -= this.income;
                 value.Employee = this;
                 workplace = value.Location;
                 this.setDestination();
                 this.income = value.Income;
                 this.Actor.Income += value.Income;
+                foreach (var square in home.CitySquare.Routes[workplace.CitySquare].Squares)
+                {
+                    square.addPassThrough(this);
+                }
+                foreach (var square in workplace.CitySquare.Routes[home.CitySquare].Squares)
+                {
+                    square.addPassThrough(this);
+                }
             }
             else
             {
