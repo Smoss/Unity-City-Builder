@@ -88,6 +88,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private Vector3 InitialVector;
     public Text taxText;
     public float trafficLimit;
+    private System.Random random;
     public void Build(Vector2 vector, bool addHuh, float assignValue = 1f)
     {
         int xLoc = (int)(vector.x), yLoc = (int)(vector.y);
@@ -210,10 +211,13 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             }
         }
         //Change this to use ticks
+        //Allows simulation to be paused
         if (!this.paused)
         {
             tick++;
         }
+        // Only update the game state every numberOfTicks ticks
+        // This will speed up calculation time
         if(tick > numberOfTicks)
         {
             CalculatePropertyValues();
@@ -271,7 +275,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         this.SelectedRealEstate = property;
     }
-
+    // This currently doesn't do anything
     private void CalculateEconomy()
     {
         this.EconomicOutput = Economy.Income;
@@ -320,6 +324,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             if (occ.Employee == null)
             {
                 var options = new List<Route>();
+                // Find available unoccupied real estate slots and add them to the options for a given occupation
                 foreach (var commute in occ.Location.CitySquare.Commutes)
                 {
                     var dest = commute.Squares[commute.Squares.Count - 1];
@@ -328,6 +333,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                         options.Add(commute);
                     }
                 }
+                // If there's available housing for jobs, fill it with a worker
                 if(options.Count >= 1)
                 {
                     float best = float.MaxValue;
@@ -336,6 +342,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                     {
                         var commute = options[x];
                         var dest = commute.Squares[commute.Squares.Count - 1];
+                        // Shorter commutes with lower REValues are better(assumed to be renters and not owners for now)
                         var reValue = dest.RealEstateValue + commute.Length * 100;
                         if (reValue < best)
                         {
@@ -343,6 +350,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                             best = reValue;
                         }
                     }
+                    // Applicant pool is currently assumed to be unlimited so a worker will be found immediately
                     var optimalHome = options[index].Squares[options[index].Squares.Count - 1];
                     GameObject newHuman = Instantiate(Human);
                     Human human = newHuman.GetComponent<Human>();
@@ -358,6 +366,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             for (int y = 0; y < cityTiles.GetLength(1); y++)
             {
+                List<GameObject> Buildables = new List<GameObject>();
                 CitySquare tile = cityTiles[x, y];
                 if (
                     tile.HousingValue > Home.GetComponent<RealEstate>().maxOccupants * costOfLiving * HousingMultiplier &&
@@ -367,16 +376,21 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                     tile.ZonedFor.Contains(Zoning.RZone)
                 )
                 {
-                    BuildProperty(Home, tile, this.Economy);
+                    Buildables.Add(Home);
                 }
-                else if (tile.ProductivityValue > 200000 * FactoryMultiplier &&
+                if (tile.ProductivityValue > 200000 * FactoryMultiplier &&
                     tile.RealEstate == null &&
                     !tile.HasRoad &&
                     tile.ProductivityValue > tile.RealEstateValue &&
                     tile.ZonedFor.Contains(Zoning.IZone)
                 )
                 {
-                    BuildProperty(Factory, tile, this.Economy);
+                    Buildables.Add(Factory);
+                }
+                // If the land is valuable enough there's a chance something will get built
+                if(Buildables.Count > 0 && UnityEngine.Random.value > .8f)
+                {
+                    BuildProperty(Buildables[random.Next(Buildables.Count)], tile, this.Economy);
                 }
             }
         }
@@ -457,6 +471,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
     private void init()
     {
+        random = new System.Random();
         SelectedClickMode = selectedClickMode;
         SelectedDrawMode = selectedDrawMode;
         humans = new List<Human>();
@@ -542,6 +557,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         );
     }
 
+    // Controls highlighting the square a given color while zoning
     private void highlightSquare(float assignValue = 1f, Vector3? initialPosition = null)
     {
         var startSquare = convertToCitySquare(initialPosition ?? painterEvent.pointerPressRaycast.worldPosition);

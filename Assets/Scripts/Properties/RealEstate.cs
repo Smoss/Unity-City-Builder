@@ -105,6 +105,7 @@ public class RealEstate : MonoBehaviour, IPointerDownHandler
         occupants = new List<Human>();
         oldTaxes = 0;
         buildingProductivity.text = Owner.NetIncome.ToString();
+        // Add jobs based on building type, this will eventually have to move out of code and to a CSV or something
         switch (type) {
             case PropertyType.Factory:
                 {
@@ -190,7 +191,7 @@ public class RealEstate : MonoBehaviour, IPointerDownHandler
         this.CityManager.Government.Income -= oldTaxes;
         float newTaxes = this.Price * CityManager.taxValue;
         this.Owner.Expenses += newTaxes;
-        this.CityManager.Government.Income += oldTaxes;
+        this.CityManager.Government.Income += newTaxes;
         oldTaxes = newTaxes;
     }
     // Update is called once per frame

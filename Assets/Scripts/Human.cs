@@ -16,6 +16,7 @@ public class Human: MonoBehaviour
     public RealEstate home;
     public RealEstate workplace;
     private RealEstate destination;
+    public float speed;
     CitySquare location;
     CitySquare Location
     {
@@ -37,6 +38,10 @@ public class Human: MonoBehaviour
     public float income;
     public float homeValue;
     public EconomicUnit Actor;
+    void Start()
+    {
+        speed = UnityEngine.Random.value + .5f;
+    }
     void Update()
     {
         if(
@@ -75,7 +80,7 @@ public class Human: MonoBehaviour
             }
             else
             {
-                Vector3 translation = rail * Time.deltaTime * UnityEngine.Random.value;
+                Vector3 translation = rail * Time.deltaTime * speed;
                 distTraveled += translation.magnitude;
                 this.transform.Translate(translation);
             }

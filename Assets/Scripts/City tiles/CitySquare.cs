@@ -107,6 +107,8 @@ public class CitySquare
     }
     public HashSet<Zoning> ZonedFor { get; private set; }
     Guid guid;
+
+    // Property value is based on both distance to jobs and level of pollution, gets recalculated every certain number of ticks
     public float CalculatePropertyValues(int commuteDist, float pollutionExp)
     {
         Routes = new Dictionary<CitySquare, Route>();
@@ -132,7 +134,7 @@ public class CitySquare
             {
                 CitySquare square = tile.tile;
                 float multiplier = 5 / tile.driveDistance;
-                // This is complicated but boils down to the 80th percentile times number of works times .1 divided by distance
+                // This is complicated but boils down to the 80th percentile times number of jobs times .1 divided by distance
                 float productivityAdd = tile.roadAccess ? (square.EightyIncome * square.AvailableJobs * .1f) : 0;
                 float housingAdd = tile.roadAccess && !tile.tile.hasRoad ? (square.Housing / tile.driveDistance) : 0;
                 productiveCount += tile.roadAccess ? 1 : 0;
@@ -149,6 +151,7 @@ public class CitySquare
         return propertyValue;
     }
 
+    // These 2 functions track the commercial value of a square, which spills over to nearby accesible squares
     public void addPassThrough(Human human)
     {
         traffic++;
@@ -175,6 +178,7 @@ public class CitySquare
             }
             Routes.Add(tile, new Route(tile));
         }
+        // Do a breadth first search to create routes to squares within nearby dist of the square
         for (int dist = 2; dist <= nearbyDist && tilesToSearch.Count > 0; dist++)
         {
             HashSet<CitySquare> nextTilesToSearch = new HashSet<CitySquare>();
@@ -185,6 +189,7 @@ public class CitySquare
                     bool hasRoadAccess = nearbyTiles[tile].roadAccess && tile.HasRoad;
                     if (neighborTile != this)
                     {
+                        // Tiles that are very nearby don't need road access to be searched, they can still provide pollution
                         if (!nearbyTiles.ContainsKey(neighborTile) && (dist <= 7 || hasRoadAccess))
                         {
                             nearbyTiles.Add(neighborTile, new CitySquareDist(dist, neighborTile, hasRoadAccess));
