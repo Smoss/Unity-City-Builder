@@ -61,6 +61,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             }
         }
     }
+    public Dropdown dropdown;
     public List<Human> humans { get; private set; }
     public int population;
     public float costOfLiving;
@@ -88,7 +89,6 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     private Vector3 InitialVector;
     public Text taxText;
     public float trafficLimit;
-    private System.Random random;
     public void Build(Vector2 vector, bool addHuh, float assignValue = 1f)
     {
         int xLoc = (int)(vector.x), yLoc = (int)(vector.y);
@@ -191,6 +191,23 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             this.SelectedClickMode = ClickMode.Select;
         }
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            this.selectedDrawMode = DrawMode.RoadMap;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            this.selectedDrawMode = DrawMode.RZone;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            this.selectedDrawMode = DrawMode.IZone;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            this.selectedDrawMode = DrawMode.CZone;
+        }
+        dropdown.value = (int)this.selectedDrawMode;
         updateUI();
         resetTextureSquares();
         var tempPainting = painting;
@@ -378,7 +395,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                 {
                     Buildables.Add(Home);
                 }
-                if (tile.ProductivityValue > 200000 * FactoryMultiplier &&
+                if (tile.ProductivityValue > 20000 * FactoryMultiplier &&
                     tile.RealEstate == null &&
                     !tile.HasRoad &&
                     tile.ProductivityValue > tile.RealEstateValue &&
@@ -390,7 +407,7 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                 // If the land is valuable enough there's a chance something will get built
                 if(Buildables.Count > 0 && UnityEngine.Random.value > .8f)
                 {
-                    BuildProperty(Buildables[random.Next(Buildables.Count)], tile, this.Economy);
+                    BuildProperty(Buildables[(int) (UnityEngine.Random.value * Buildables.Count)], tile, this.Economy);
                 }
             }
         }
@@ -471,7 +488,6 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
     private void init()
     {
-        random = new System.Random();
         SelectedClickMode = selectedClickMode;
         SelectedDrawMode = selectedDrawMode;
         humans = new List<Human>();
@@ -497,11 +513,9 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
     public void GenerateMap()
     {
+        colorSet = new Color32[2];
         init();
         //terrainData = terrain.terrainData;
-        colorSet = new Color32[2];
-        colorSet[0] = Color.green;
-        colorSet[1] = Color.red;
         MapGenerator.drawMode = SelectedDrawMode;
         MapGenerator.colorSet = colorSet;
         map = MapGenerator.GenerateMap(this);
@@ -529,6 +543,29 @@ public class CityManager : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     public void drawTexture()
     {
+        switch(this.selectedDrawMode)
+        {
+            case DrawMode.RoadMap:
+                colorSet[0] = Color.black;
+                colorSet[1] = Color.red;
+                break;
+            case DrawMode.RZone:
+                colorSet[0] = Color.green;
+                colorSet[1] = Color.red;
+                break;
+            case DrawMode.CZone:
+                colorSet[0] = Color.blue;
+                colorSet[1] = Color.red;
+                break;
+            case DrawMode.IZone:
+                colorSet[0] = Color.yellow;
+                colorSet[1] = Color.red;
+                break;
+            default:
+                colorSet[0] = Color.green;
+                colorSet[1] = Color.red;
+                break;
+        }
         if (map != null)
         {
             Texture2D tex = TextureGenerator.TextureFromHeightMap(map[(int)SelectedDrawMode], colorSet);

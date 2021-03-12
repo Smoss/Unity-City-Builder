@@ -41,6 +41,13 @@ public class Human: MonoBehaviour
     void Start()
     {
         speed = UnityEngine.Random.value + .5f;
+        //Material[] mats = GetComponents<Material>();
+        //foreach(var mat in mats)
+        //{
+
+            //mat.color = new Color(1f, UnityEngine.Random.value, UnityEngine.Random.value);
+        //}
+        //mat. = new Color(1f, UnityEngine.Random.value, UnityEngine.Random.value);
     }
     void Update()
     {

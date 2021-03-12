@@ -94,5 +94,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   home: {fileID: 0}
   workplace: {fileID: 0}
+  speed: 0
   income: 0
   homeValue: 0
+  mat: {fileID: 2100000, guid: 1d260c6051af95f4ab1e697936be5067, type: 2}
